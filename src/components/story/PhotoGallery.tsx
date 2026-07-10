@@ -2,14 +2,18 @@
 
 import { useState, useEffect } from 'react';
 
-// NOTE TO DEVELOPER: 
-// Replace these Unsplash URLs with the actual paths to Akanksha's images.
-// Place your images in the `public/gallery/` folder and reference them like: '/gallery/image1.jpg'
 // Helper to transform Google Drive viewer links into direct image/video fetch links
-function getDirectDriveLink(url: string) {
+function getDirectDriveLink(url: string, type: 'image' | 'video') {
   const match = url.match(/\/d\/(.+?)\//);
   if (match && match[1]) {
-    return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+    const id = match[1];
+    if (type === 'image') {
+      // Use the thumbnail trick which avoids strict CORP blocking for images
+      return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
+    } else {
+      // Route videos through our Next.js API proxy to strip CORP headers and enable streaming
+      return `/api/drive-proxy?id=${id}`;
+    }
   }
   return url;
 }
@@ -141,7 +145,7 @@ function CarouselDeck({ items, type, title }: CarouselProps) {
             opacity = diff > 2 ? 0 : 0.6; // Fade out the deepest card
           }
 
-          const directUrl = getDirectDriveLink(item.url);
+          const directUrl = getDirectDriveLink(item.url, type);
 
           return (
             <div
