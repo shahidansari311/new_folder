@@ -6,7 +6,10 @@ export const metadata: Metadata = {
   description: 'A magical interactive universe crafted with love for a very special birthday.',
   keywords: ['birthday', 'love', 'magical', 'universe', 'Akanksha'],
   authors: [{ name: 'Made with love' }],
-  robots: 'noindex, nofollow',
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export const viewport: Viewport = {
