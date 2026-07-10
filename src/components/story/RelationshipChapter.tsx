@@ -1,32 +1,44 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 interface Props { onComplete: () => void; }
 export default function RelationshipChapter({ onComplete }: Props) {
   const [scene, setScene] = useState(0);
   const [contentOpacity, setContentOpacity] = useState(1);
 
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+
   useEffect(() => {
-    const triggerScene = (nextScene: number) => {
-      setContentOpacity(0);
-      setTimeout(() => {
-        setScene(nextScene);
-        setContentOpacity(1);
-      }, 500);
+    let cancelled = false;
+    let transitionTimer: NodeJS.Timeout;
+
+    const triggerScene = (nextScene: number, delay: number) => {
+      return setTimeout(() => {
+        if (cancelled) return;
+        setContentOpacity(0);
+        transitionTimer = setTimeout(() => {
+          if (cancelled) return;
+          setScene(nextScene);
+          setContentOpacity(1);
+        }, 500);
+      }, delay);
     };
 
     const t = [
-      setTimeout(() => triggerScene(1), 3500),
-      setTimeout(() => triggerScene(2), 8000),
-      setTimeout(() => triggerScene(3), 13000),
-      setTimeout(() => onComplete(), 17000),
+      triggerScene(1, 3500),
+      setTimeout(() => { if (!cancelled) onCompleteRef.current(); }, 8000),
     ];
-    return () => t.forEach(clearTimeout);
-  }, [onComplete]);
+
+    return () => {
+      cancelled = true;
+      t.forEach(clearTimeout);
+      if (transitionTimer) clearTimeout(transitionTimer);
+    };
+  }, []);
 
   const scenes = [
     { bg: 'linear-gradient(135deg, #0B1437, #162060)', emoji: '🌙✨', title: 'Aasman Chamakne Laga', text: 'Saare taare humare liye ek sath chamakne lage.' },
     { bg: 'linear-gradient(135deg, #0f1860, #1a1080)', emoji: '🤗', title: 'Pehli Hug', text: 'Wo khali classroom. Khidki se aati chaandni. Aur wo khamoshi jisne sab kuch bol diya.' },
-    { bg: 'linear-gradient(135deg, #081326, #162080)', emoji: '🌊💫', title: 'Lake Ke Paas', text: 'Jugnu. Aasman me lights. Paani pe chaand ki roshni. Aur tum.' },
   ];
   const s = scenes[scene] || scenes[0];
   return (

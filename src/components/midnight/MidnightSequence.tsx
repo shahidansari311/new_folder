@@ -51,7 +51,12 @@ export default function MidnightSequence({ onComplete }: Props) {
   const starsRef = useRef<{x:number,y:number,r:number,opacity:number}[]>([]);
   const giftYRef = useRef(150);
 
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+
   useEffect(() => {
+    let cancelled = false;
+    const timers: NodeJS.Timeout[] = [];
     const canvas = canvasRef.current;
     if (!canvas) return;
     canvas.width = window.innerWidth;
@@ -67,70 +72,84 @@ export default function MidnightSequence({ onComplete }: Props) {
 
     // SEQUENCE
     // Scene 1: Freeze (already in freeze)
-    setTimeout(() => {
+    timers.push(setTimeout(() => {
+      if (cancelled) return;
       // Scene 2: Fade to black
       setScene('fade-black');
       setBlackOpacity(1);
-    }, 1200);
+    }, 1200));
 
-    setTimeout(() => {
+    timers.push(setTimeout(() => {
+      if (cancelled) return;
       setScene('heartbeat');
       setShowHeartbeat(true);
-    }, 2500);
+    }, 2500));
 
-    setTimeout(() => {
+    timers.push(setTimeout(() => {
+      if (cancelled) return;
       setShowHeartbeat(false);
       setScene('spark');
       setShowSpark(true);
       setSparkY(window.innerHeight - 100);
-    }, 4200);
+    }, 4200));
 
     // Spark rises
-    setTimeout(() => setScene('spark-rise'), 4500);
+    timers.push(setTimeout(() => { if (!cancelled) setScene('spark-rise'); }, 4500));
 
     // Fireworks start
-    setTimeout(() => {
+    timers.push(setTimeout(() => {
+      if (cancelled) return;
       setBlackOpacity(0.3);
       setScene('fireworks');
-      triggerFireworks(canvas);
-    }, 6500);
+      triggerFireworks(canvas, timers, () => cancelled);
+    }, 6500));
 
     // World returns
-    setTimeout(() => {
+    timers.push(setTimeout(() => {
+      if (cancelled) return;
       setBlackOpacity(0);
       setScene('world-return');
-    }, 9000);
+    }, 9000));
 
     // Lanterns
-    setTimeout(() => {
+    timers.push(setTimeout(() => {
+      if (cancelled) return;
       setScene('lanterns');
       initLanterns(canvas);
-    }, 11000);
+    }, 11000));
 
     // Title (Happy Birthday Akanksha)
-    setTimeout(() => {
+    timers.push(setTimeout(() => {
+      if (cancelled) return;
       setScene('title');
       setShowTitle(true);
       setTitlePhase('forming');
-    }, 14000);
+    }, 14000));
 
-    setTimeout(() => setTitlePhase('glowing'), 16500);
+    timers.push(setTimeout(() => { if (!cancelled) setTitlePhase('glowing'); }, 16500));
 
-    setTimeout(() => setTitlePhase('dissolving'), 19000);
+    timers.push(setTimeout(() => { if (!cancelled) setTitlePhase('dissolving'); }, 19000));
 
-    setTimeout(() => {
+    timers.push(setTimeout(() => {
+      if (cancelled) return;
       setShowTitle(false);
       setScene('gift');
       setShowGift(true);
-    }, 21000);
+    }, 21000));
 
     // Complete - move to gift experience
-    setTimeout(() => onComplete(), 27000);
-  }, [onComplete]);
+    timers.push(setTimeout(() => { if (!cancelled) onCompleteRef.current(); }, 27000));
 
-  function triggerFireworks(canvas: HTMLCanvasElement) {
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+    };
+  }, []);
+
+  function triggerFireworks(canvas: HTMLCanvasElement, timers: NodeJS.Timeout[], isCancelled: () => boolean) {
     const launchFirework = (delay: number) => {
-      setTimeout(() => {
+      timers.push(setTimeout(() => {
+        if (isCancelled()) return;
         const fw: Firework = {
           x: canvas.width * (0.2 + Math.random() * 0.6),
           y: canvas.height * (0.1 + Math.random() * 0.4),
@@ -152,7 +171,7 @@ export default function MidnightSequence({ onComplete }: Props) {
           }),
         };
         fireworksRef.current.push(fw);
-      }, delay);
+      }, delay));
     };
 
     for (let i = 0; i < 12; i++) {

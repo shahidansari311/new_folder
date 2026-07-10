@@ -40,20 +40,35 @@ export default function BirthdayLetter({ onComplete }: Props) {
   const [visibleLines, setVisibleLines] = useState<number[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+
   useEffect(() => {
+    let cancelled = false;
+    const timers: NodeJS.Timeout[] = [];
+
     LETTER_LINES.forEach((line, i) => {
-      setTimeout(() => {
+      const t = setTimeout(() => {
+        if (cancelled) return;
         setVisibleLines(prev => [...prev, i]);
         if (containerRef.current) {
           containerRef.current.scrollTop = containerRef.current.scrollHeight;
         }
       }, line.delay * 1000);
+      timers.push(t);
     });
 
     const lastDelay = LETTER_LINES[LETTER_LINES.length - 1].delay * 1000;
-    const completeTimer = setTimeout(() => onComplete(), lastDelay + 5000);
-    return () => clearTimeout(completeTimer);
-  }, [onComplete]);
+    const completeTimer = setTimeout(() => {
+      if (!cancelled) onCompleteRef.current();
+    }, lastDelay + 5000);
+    timers.push(completeTimer);
+
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+    };
+  }, []);
 
   return (
     <div style={{

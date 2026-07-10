@@ -9,8 +9,12 @@ export default function TimePortal({ onComplete }: Props) {
   const [year, setYear] = useState(2026);
   const [showCalendar, setShowCalendar] = useState(false);
   const animRef = useRef<number>(0);
+  const onCompleteRef = useRef(onComplete);
+  
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
 
   useEffect(() => {
+    let cancelled = false;
     const canvas = canvasRef.current;
     if (!canvas) return;
     canvas.width = window.innerWidth;
@@ -63,28 +67,40 @@ export default function TimePortal({ onComplete }: Props) {
 
     animRef.current = requestAnimationFrame(draw);
 
-    // Calendar animation
-    setTimeout(() => setShowCalendar(true), 2000);
+    const t1 = setTimeout(() => {
+      if (!cancelled) setShowCalendar(true);
+    }, 2000);
 
     // Year counting down
     let yr = 2026;
+    let t2: NodeJS.Timeout;
+    let t3: NodeJS.Timeout;
+
     const yearInterval = setInterval(() => {
+      if (cancelled) return;
       yr--;
       setYear(yr);
       if (yr <= 2020) {
         clearInterval(yearInterval);
-        setTimeout(() => {
+        t2 = setTimeout(() => {
+          if (cancelled) return;
           setShowCalendar(false);
-          setTimeout(() => onComplete(), 1500);
+          t3 = setTimeout(() => {
+            if (!cancelled) onCompleteRef.current();
+          }, 1500);
         }, 2000);
       }
     }, 400);
 
     return () => {
+      cancelled = true;
       cancelAnimationFrame(animRef.current);
       clearInterval(yearInterval);
+      clearTimeout(t1);
+      if (t2) clearTimeout(t2);
+      if (t3) clearTimeout(t3);
     };
-  }, [onComplete]);
+  }, []);
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 25 }}>

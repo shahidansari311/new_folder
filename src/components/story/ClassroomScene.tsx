@@ -9,7 +9,12 @@ export default function ClassroomScene({ onComplete }: Props) {
   const [showTimeline, setShowTimeline] = useState(false);
   const animRef = useRef<number>(0);
 
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+
   useEffect(() => {
+    let cancelled = false;
+    const timers: NodeJS.Timeout[] = [];
     const canvas = canvasRef.current;
     if (!canvas) return;
     canvas.width = window.innerWidth;
@@ -24,6 +29,7 @@ export default function ClassroomScene({ onComplete }: Props) {
     let seqTimer = 0;
 
     const draw = (ts: number) => {
+      if (cancelled) return;
       const t = ts * 0.001;
       const W = canvas.width, H = canvas.height;
       ctx.clearRect(0, 0, W, H);
@@ -66,23 +72,31 @@ export default function ClassroomScene({ onComplete }: Props) {
       if (seqTimer > 480 && sequence === 2 && girlSeated) {
         sequence = 3;
         boyLookGirl = 1;
-        setTimeout(() => { boyLookGirl = 0; }, 1500);
+        const t1 = setTimeout(() => { if (!cancelled) boyLookGirl = 0; }, 1500);
+        timers.push(t1);
       }
       if (seqTimer > 660 && sequence === 3) {
         sequence = 4;
         setShowTimeline(true);
-        setTimeout(() => {
+        const t2 = setTimeout(() => {
+          if (cancelled) return;
           setShowTimeline(false);
-          setTimeout(() => onComplete(), 2000);
+          const t3 = setTimeout(() => { if (!cancelled) onCompleteRef.current(); }, 2000);
+          timers.push(t3);
         }, 3000);
+        timers.push(t2);
       }
 
       animRef.current = requestAnimationFrame(draw);
     };
 
     animRef.current = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(animRef.current);
-  }, [onComplete]);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(animRef.current);
+      timers.forEach(clearTimeout);
+    };
+  }, []);
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 22 }}>

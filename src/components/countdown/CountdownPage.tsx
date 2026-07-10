@@ -145,19 +145,31 @@ export default function CountdownPage({ targetDate, onComplete }: Props) {
   const [opacity, setOpacity] = useState(0);
   const triggered = useRef(false);
 
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+
   // Fade in
   useEffect(() => {
-    setTimeout(() => setOpacity(1), 100);
+    let cancelled = false;
+    const t = setTimeout(() => { if (!cancelled) setOpacity(1); }, 100);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
   }, []);
 
   // When countdown done
   useEffect(() => {
+    let t: NodeJS.Timeout;
     if (done && !triggered.current) {
       triggered.current = true;
       setFrozen(true);
-      setTimeout(() => onComplete(), 1000);
+      t = setTimeout(() => { onCompleteRef.current(); }, 1000);
     }
-  }, [done, onComplete]);
+    return () => {
+      if (t) clearTimeout(t);
+    };
+  }, [done]);
 
   return (
     <div

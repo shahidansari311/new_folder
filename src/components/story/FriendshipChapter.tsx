@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 interface Props { onComplete: () => void; }
 
@@ -8,23 +8,38 @@ export default function FriendshipChapter({ onComplete }: Props) {
   const [scene, setScene] = useState(0);
   const [contentOpacity, setContentOpacity] = useState(1);
 
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+
   useEffect(() => {
-    const triggerScene = (nextScene: number) => {
-      setContentOpacity(0);
-      setTimeout(() => {
-        setScene(nextScene);
-        setContentOpacity(1);
-      }, 500);
+    let cancelled = false;
+    let transitionTimer: NodeJS.Timeout;
+
+    const triggerScene = (nextScene: number, delay: number) => {
+      return setTimeout(() => {
+        if (cancelled) return;
+        setContentOpacity(0);
+        transitionTimer = setTimeout(() => {
+          if (cancelled) return;
+          setScene(nextScene);
+          setContentOpacity(1);
+        }, 500);
+      }, delay);
     };
 
     const timers = [
-      setTimeout(() => triggerScene(1), 2000),
-      setTimeout(() => triggerScene(2), 5000),
-      setTimeout(() => triggerScene(3), 8000),
-      setTimeout(() => onComplete(), 12000),
+      triggerScene(1, 2000),
+      triggerScene(2, 5000),
+      triggerScene(3, 8000),
+      setTimeout(() => { if (!cancelled) onCompleteRef.current(); }, 12000),
     ];
-    return () => timers.forEach(clearTimeout);
-  }, [onComplete]);
+
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+      if (transitionTimer) clearTimeout(transitionTimer);
+    };
+  }, []);
 
   const scenes = [
     {

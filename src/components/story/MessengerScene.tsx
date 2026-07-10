@@ -38,28 +38,48 @@ export default function MessengerScene({ onComplete }: Props) {
   const [typingFor, setTypingFor] = useState<'me' | 'you' | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+
   useEffect(() => {
+    let cancelled = false;
+    let mainTimer: NodeJS.Timeout;
+    let nextTimer: NodeJS.Timeout;
+    let completeTimer: NodeJS.Timeout;
     let idx = 0;
+
     const showNext = () => {
+      if (cancelled) return;
       if (idx >= MESSAGES.length) {
-        setTimeout(() => onComplete(), 3000);
+        completeTimer = setTimeout(() => {
+          if (!cancelled) onCompleteRef.current();
+        }, 3000);
         return;
       }
       const msg = MESSAGES[idx];
       setTypingFor(msg.sender);
-      setTimeout(() => {
+      
+      mainTimer = setTimeout(() => {
+        if (cancelled) return;
         setTypingFor(null);
         setVisibleMessages(prev => [...prev, msg]);
         idx++;
         if (containerRef.current) {
           containerRef.current.scrollTop = containerRef.current.scrollHeight;
         }
-        setTimeout(showNext, 1200 + Math.random() * 800);
+        nextTimer = setTimeout(showNext, 1200 + Math.random() * 800);
       }, 1000 + msg.text.length * 20);
     };
-    const timer = setTimeout(showNext, 1000);
-    return () => clearTimeout(timer);
-  }, [onComplete]);
+
+    nextTimer = setTimeout(showNext, 1000);
+
+    return () => {
+      cancelled = true;
+      if (mainTimer) clearTimeout(mainTimer);
+      if (nextTimer) clearTimeout(nextTimer);
+      if (completeTimer) clearTimeout(completeTimer);
+    };
+  }, []);
 
   return (
     <div style={{

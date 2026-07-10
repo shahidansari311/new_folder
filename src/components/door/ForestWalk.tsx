@@ -25,86 +25,77 @@ export default function ForestWalk({ phase: experiencePhase, onDoorReached, onUn
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [shake, setShake] = useState(false);
-  const [unlockAnim, setUnlockAnim] = useState(false);
-  const [doorOpenAngle, setDoorOpenAngle] = useState(0);
+  const [lockUnlocking, setLockUnlocking] = useState(false);
+  const [doorSwungOpen, setDoorSwungOpen] = useState(false);
+  const [lockHover, setLockHover] = useState(false);
+
   const cameraXRef = useRef(0);
-  const cameraZoomRef = useRef(1);
   const animRef = useRef<number>(0);
   const firefliesRef = useRef<FireflyGuide[]>([]);
   const pathProgressRef = useRef(0);
   const startTimeRef = useRef(0);
-  const mousePosRef = useRef({ x: 0, y: 0 });
-  const isHoveringLockRef = useRef(false);
-  const lockParticlesRef = useRef<{ x: number; y: number; vx: number; vy: number; life: number; size: number }[]>([]);
 
+  // Keep latest callbacks in refs so the mount effect never needs to re-run
+  // just because the parent re-rendered with new function identities.
+  const onDoorReachedRef = useRef(onDoorReached);
+  const onUnlockedRef = useRef(onUnlocked);
+  const unlockedFiredRef = useRef(false);
+  useEffect(() => { onDoorReachedRef.current = onDoorReached; }, [onDoorReached]);
+  useEffect(() => { onUnlockedRef.current = onUnlocked; }, [onUnlocked]);
+
+  // ---- One-time mount setup: fade in, size canvas, seed fireflies, run the
+  // walk -> gate -> door timeline exactly once. ----
   useEffect(() => {
+    let cancelled = false;
     setTimeout(() => setOpacity(1), 200);
     startTimeRef.current = Date.now();
 
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    if (canvas) {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
 
-    // Init guide fireflies
-    firefliesRef.current = Array.from({length: 8}, (_, i) => ({
-      x: canvas.width * 0.3 + i * 30,
-      y: canvas.height * 0.5,
-      tx: canvas.width * 0.3 + i * 30,
-      ty: canvas.height * 0.5,
-      glow: Math.random(),
-      glowDir: 1,
-      speed: 0.02 + Math.random() * 0.01,
-      waiting: false,
-      waitTimer: 0,
-    }));
+      firefliesRef.current = Array.from({ length: 8 }, (_, i) => ({
+        x: canvas.width * 0.3 + i * 30,
+        y: canvas.height * 0.5,
+        tx: canvas.width * 0.3 + i * 30,
+        ty: canvas.height * 0.5,
+        glow: Math.random(),
+        glowDir: 1,
+        speed: 0.02 + Math.random() * 0.01,
+        waiting: false,
+        waitTimer: 0,
+      }));
+    }
 
-    // Forest walk sequence
-    const walkSequence = async () => {
-      // Walk toward door - 8 seconds
-      await delay(8000);
+    const t1 = setTimeout(() => {
+      if (cancelled) return;
       setWalkPhase('gate');
-      await delay(4000);
-      setWalkPhase('door');
-      onDoorReached();
-    };
-    walkSequence();
-  }, [onDoorReached]);
+    }, 8000);
 
+    const t2 = setTimeout(() => {
+      if (cancelled) return;
+      setWalkPhase('door');
+      onDoorReachedRef.current();
+    }, 12000);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, []); // <-- runs once, no matter how many times the parent re-renders
+
+  // ---- Background canvas: forest path + approaching gate + fireflies.
+  // No longer depends on door-open state, so it never restarts mid-unlock. ----
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d')!;
 
-    const handleMouseMove = (e: MouseEvent) => {
-      mousePosRef.current = { x: e.clientX, y: e.clientY };
-      if (walkPhase !== 'door') {
-        isHoveringLockRef.current = false;
-        return;
-      }
-
-      const W = canvas.width;
-      const H = canvas.height;
-      const doorW = 120, doorH = H * 0.55;
-      const lockX = (W * 1.1) - cameraXRef.current + (doorW / 2 - 20);
-      const lockY = H - 40 - (doorH * 0.45);
-
-      const dx = e.clientX - lockX;
-      const dy = e.clientY - lockY;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      const hovering = dist < 60;
-      if (hovering !== isHoveringLockRef.current) {
-        isHoveringLockRef.current = hovering;
-        canvas.style.cursor = hovering ? 'pointer' : 'default';
-      }
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-
     const draw = (ts: number) => {
       const t = ts * 0.001;
 
-      // Handle window resize dynamically inside draw loop
       if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
@@ -114,10 +105,9 @@ export default function ForestWalk({ phase: experiencePhase, onDoorReached, onUn
 
       ctx.clearRect(0, 0, W, H);
 
-      // Time-based smooth camera movement
       const elapsed = Date.now() - startTimeRef.current;
-      const easeOutQuad = (t: number) => t * (2 - t);
-      const easeInOutQuad = (t: number) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      const easeOutQuad = (p: number) => p * (2 - p);
+      const easeInOutQuad = (p: number) => (p < 0.5 ? 2 * p * p : -1 + (4 - 2 * p) * p);
 
       if (walkPhase === 'walk') {
         const p = Math.min(1, elapsed / 8000);
@@ -125,47 +115,30 @@ export default function ForestWalk({ phase: experiencePhase, onDoorReached, onUn
         pathProgressRef.current = p;
       } else if (walkPhase === 'gate') {
         const p = Math.min(1, (elapsed - 8000) / 4000);
-        cameraXRef.current = (W * 0.35) + easeOutQuad(p) * W * 0.05;
+        cameraXRef.current = W * 0.35 + easeOutQuad(p) * W * 0.05;
       } else {
         const p = Math.min(1, (elapsed - 12000) / 3000);
-        cameraXRef.current = (W * 0.40) + easeOutQuad(p) * W * 0.20;
+        cameraXRef.current = W * 0.4 + easeOutQuad(p) * W * 0.1;
       }
 
-      // Camera bob effect for walking realism
       const isMoving = elapsed < 15000;
       const walkBob = isMoving ? Math.sin(elapsed * 0.006) * 6 * Math.min(1, (15000 - elapsed) / 2000) : 0;
 
-      if (walkPhase === 'lock-zoom' || walkPhase === 'password') {
-        cameraZoomRef.current = Math.min(2.5, cameraZoomRef.current + 0.02); // slightly faster zoom
-      }
-
       ctx.save();
       ctx.translate(-cameraXRef.current, walkBob);
-      ctx.scale(cameraZoomRef.current, cameraZoomRef.current);
-      ctx.translate((1 - cameraZoomRef.current) * W / 2, (1 - cameraZoomRef.current) * H / 2);
 
-      // Forest path
       drawForestPath(ctx, W, H, t, pathProgressRef.current);
 
-      // Ancient gate
-      if (walkPhase === 'gate' || walkPhase === 'door' || walkPhase === 'lock-zoom' ||
-          walkPhase === 'password' || walkPhase === 'unlocking' || walkPhase === 'open') {
-        drawAncientGate(ctx, W * 0.85, H, t, walkPhase === 'gate');
+      if (walkPhase === 'gate') {
+        drawAncientGate(ctx, W * 0.85, H, t);
       }
 
-      // The Door with hover support
-      if (['door', 'lock-zoom', 'password', 'unlocking', 'open'].includes(walkPhase)) {
-        drawMagicDoor(ctx, W * 1.1, H, t, doorOpenAngle, walkPhase, isHoveringLockRef.current);
-      }
-
-      // Guide fireflies
       firefliesRef.current.forEach(ff => {
         ff.glow += ff.glowDir * 0.03;
         if (ff.glow > 1 || ff.glow < 0.2) ff.glowDir *= -1;
 
-        // Move toward target
         const dx = ff.tx - ff.x, dy = ff.ty - ff.y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
+        const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist > 5) {
           ff.x += dx * ff.speed;
           ff.y += dy * ff.speed;
@@ -183,66 +156,26 @@ export default function ForestWalk({ phase: experiencePhase, onDoorReached, onUn
           }
         }
 
-        const color = '#E8C06A';
         ctx.save();
         ctx.globalAlpha = ff.glow;
         ctx.beginPath();
         ctx.arc(ff.x, ff.y, 3, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.shadowColor = color;
+        ctx.fillStyle = '#E8C06A';
+        ctx.shadowColor = '#E8C06A';
         ctx.shadowBlur = 15;
         ctx.fill();
         ctx.restore();
       });
 
       ctx.restore();
-
-      // Render lock hover particles in screen-space
-      if (walkPhase === 'door') {
-        const doorW = 120, doorH = H * 0.55;
-        const lockX = (W * 1.1) - cameraXRef.current + (doorW / 2 - 20);
-        const lockY = H - 40 - (doorH * 0.45);
-
-        if (isHoveringLockRef.current && Math.random() < 0.4) {
-          lockParticlesRef.current.push({
-            x: lockX + (Math.random() - 0.5) * 10,
-            y: lockY + (Math.random() - 0.5) * 10,
-            vx: (Math.random() - 0.5) * 1.5,
-            vy: (Math.random() - 0.5) * 1.5 - 0.5,
-            life: 1.0,
-            size: Math.random() * 2 + 1,
-          });
-        }
-
-        lockParticlesRef.current.forEach((p, idx) => {
-          p.x += p.vx;
-          p.y += p.vy;
-          p.life -= 0.02;
-          if (p.life <= 0) {
-            lockParticlesRef.current.splice(idx, 1);
-            return;
-          }
-          ctx.save();
-          ctx.globalAlpha = p.life;
-          ctx.fillStyle = '#E8C06A';
-          ctx.shadowColor = '#E8C06A';
-          ctx.shadowBlur = 6;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-        });
-      }
-
       animRef.current = requestAnimationFrame(draw);
     };
 
     animRef.current = requestAnimationFrame(draw);
-    return () => {
-      cancelAnimationFrame(animRef.current);
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, [walkPhase, doorOpenAngle]);
+    return () => cancelAnimationFrame(animRef.current);
+  }, [walkPhase]);
+
+  const doorVisible = ['door', 'lock-zoom', 'password', 'unlocking', 'open'].includes(walkPhase);
 
   const handleLockClick = useCallback(() => {
     if (walkPhase !== 'door') return;
@@ -250,41 +183,33 @@ export default function ForestWalk({ phase: experiencePhase, onDoorReached, onUn
     setTimeout(() => {
       setWalkPhase('password');
       setShowPassword(true);
-    }, 1500);
+    }, 1200);
   }, [walkPhase]);
 
   const handlePasswordSubmit = useCallback(() => {
     if (password.toLowerCase() === 'akanksha') {
       setError('');
-      setUnlockAnim(true);
-      setWalkPhase('unlocking');
       setShowPassword(false);
+      setWalkPhase('unlocking');
+      setLockUnlocking(true); // lock shackle pops open + drops away
 
-      // Open door sequence
-      const startTime = Date.now();
-      const animateDoor = () => {
-        const elapsed = Date.now() - startTime;
-        const duration = 2500;
-        const progress = Math.min(1, elapsed / duration);
-        // Ease in out cubic for smooth opening
-        const ease = progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
-        const angle = ease * 105;
-        setDoorOpenAngle(angle);
-        
-        if (progress < 1) {
-          requestAnimationFrame(animateDoor);
-        } else {
-          setWalkPhase('open');
-          setTimeout(() => onUnlocked(), 2500);
-        }
-      };
-      requestAnimationFrame(animateDoor);
+      // Let the lock finish falling, then swing the door itself open.
+      setTimeout(() => setDoorSwungOpen(true), 700);
     } else {
       setShake(true);
-      setError("Hmm... ye sahi magic word nhi hai. Try again! 🥺");
+      setError('Hmm... ye sahi magic word nhi hai. Try again! 🥺');
       setTimeout(() => setShake(false), 600);
     }
-  }, [password, onUnlocked]);
+  }, [password]);
+
+  // Fires once, exactly when the door's CSS swing-open transition really ends.
+  const handleDoorTransitionEnd = useCallback((e: React.TransitionEvent<HTMLDivElement>) => {
+    if (e.propertyName !== 'transform') return;
+    if (unlockedFiredRef.current) return;
+    unlockedFiredRef.current = true;
+    setWalkPhase('open');
+    setTimeout(() => onUnlockedRef.current(), 1200);
+  }, []);
 
   return (
     <div id="forest-walk" style={{
@@ -297,43 +222,50 @@ export default function ForestWalk({ phase: experiencePhase, onDoorReached, onUn
         aria-hidden="true"
       />
 
-      {/* Lock clickable area covering screen for bulletproof clickability */}
-      {walkPhase === 'door' && (
-        <>
-          <div
-            role="button"
-            aria-label="Click the lock to enter"
-            tabIndex={0}
-            onClick={handleLockClick}
-            onKeyDown={e => e.key === 'Enter' && handleLockClick()}
-            style={{
-              position: 'absolute',
-              inset: 0,
-              cursor: 'pointer',
-              zIndex: 3,
-            }}
-          />
-          <p style={{
-            position: 'absolute',
-            bottom: '12%',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            fontFamily: "'Cormorant Garamond', serif",
-            fontSize: 'clamp(14px, 2vw, 20px)',
-            fontStyle: 'italic',
-            color: 'rgba(200,212,232,0.6)',
-            letterSpacing: '0.05em',
-            zIndex: 4,
-            animation: 'breathe 3s ease-in-out infinite',
-            textAlign: 'center',
-            pointerEvents: 'none',
-          }}>
-            Click the magic lock to unlock memories...
-          </p>
-        </>
+      {doorVisible && (
+        <div className="door-stage">
+          <div className={`door-wrap ${walkPhase === 'lock-zoom' || walkPhase === 'password' ? 'zoomed' : ''}`}>
+            <div
+              className={`door-panel ${doorSwungOpen ? 'door-open' : ''}`}
+              onTransitionEnd={handleDoorTransitionEnd}
+            >
+              <div className="door-panel-face" />
+              <div className="door-panel-inner-light" style={{ opacity: doorSwungOpen ? 1 : 0 }} />
+
+              {(walkPhase === 'door' || walkPhase === 'lock-zoom') && (
+                <button
+                  type="button"
+                  aria-label="Click the lock to enter"
+                  className={`lock-hang ${lockHover ? 'lock-hover' : ''} ${lockUnlocking ? 'lock-unlocking' : ''}`}
+                  onClick={handleLockClick}
+                  onMouseEnter={() => setLockHover(true)}
+                  onMouseLeave={() => setLockHover(false)}
+                >
+                  <svg viewBox="0 0 60 60" width="100%" height="100%">
+                    <path
+                      className="lock-shackle"
+                      d="M18 26 V18 a12 12 0 0 1 24 0 V26"
+                      fill="none"
+                      stroke="#8B6914"
+                      strokeWidth="6"
+                      strokeLinecap="round"
+                    />
+                    <rect x="12" y="24" width="36" height="28" rx="6" fill="#8B6914" />
+                    <circle cx="30" cy="35" r="5" fill="#3a2808" />
+                    <rect x="27" y="35" width="6" height="10" fill="#3a2808" />
+                    <circle cx="30" cy="35" r="9" fill="none" stroke="#E8C06A" strokeWidth="1" className="lock-glow" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {walkPhase === 'door' && (
+            <p className="door-hint">Click the magic lock to unlock memories...</p>
+          )}
+        </div>
       )}
 
-      {/* Password Modal */}
       {showPassword && (
         <div style={{
           position: 'fixed', inset: 0,
@@ -358,7 +290,6 @@ export default function ForestWalk({ phase: experiencePhase, onDoorReached, onUn
               animation: shake ? 'shake 0.5s ease' : 'none',
             }}
           >
-            {/* Lock icon */}
             <div style={{ fontSize: '48px', marginBottom: '24px', filter: 'drop-shadow(0 0 20px rgba(232,192,106,0.6))' }}>
               🔐
             </div>
@@ -457,15 +388,29 @@ export default function ForestWalk({ phase: experiencePhase, onDoorReached, onUn
         </div>
       )}
 
-      {/* Door opened - golden light reveal */}
       {walkPhase === 'open' && (
         <div style={{
           position: 'fixed', inset: 0,
-          background: 'radial-gradient(ellipse at center, rgba(255,200,80,0.2), transparent 60%)',
+          background: 'radial-gradient(ellipse at center, rgba(255,200,80,0.25), transparent 60%)',
           zIndex: 5,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           animation: 'fadeIn 2s ease forwards',
           pointerEvents: 'none',
-        }} />
+        }}>
+          <h2 style={{
+            fontFamily: "'Cinzel', serif",
+            fontSize: 'clamp(24px, 4vw, 48px)',
+            color: '#F0F4FF',
+            letterSpacing: '0.1em',
+            textShadow: '0 0 20px rgba(255,225,140,0.8)',
+            animation: 'fadeInUp 1.5s ease 0.5s forwards',
+            opacity: 0,
+          }}>
+            Welcome to our memories...
+          </h2>
+        </div>
       )}
 
       <style>{`
@@ -476,15 +421,136 @@ export default function ForestWalk({ phase: experiencePhase, onDoorReached, onUn
           60% { transform: translateX(-8px); }
           80% { transform: translateX(8px); }
         }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        @keyframes breathe {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 0.8; }
+        }
+
+        @keyframes lockSwing {
+          0%, 100% { transform: rotate(-3deg); }
+          50% { transform: rotate(3deg); }
+        }
+
+        @keyframes lockDrop {
+          to { transform: translateY(80px) rotate(20deg); opacity: 0; }
+        }
+
+        .door-stage {
+          position: absolute;
+          inset: 0;
+          z-index: 3;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          perspective: 1800px;
+        }
+
+        .door-wrap {
+          position: relative;
+          transition: transform 1.1s cubic-bezier(0.4, 0, 0.2, 1);
+          animation: fadeIn 1s ease forwards;
+        }
+        .door-wrap.zoomed {
+          transform: scale(1.55);
+        }
+
+        .door-panel {
+          position: relative;
+          width: min(320px, 42vw);
+          height: min(600px, 74vh);
+          transform-origin: left center;
+          transform-style: preserve-3d;
+          transition: transform 2.2s cubic-bezier(0.65, 0, 0.35, 1);
+          border: 8px solid #241407;
+          border-radius: 6px;
+          box-shadow: 0 30px 90px rgba(0,0,0,0.65), inset 0 0 50px rgba(0,0,0,0.5);
+          background:
+            linear-gradient(135deg, rgba(255,255,255,0.04) 0%, transparent 40%),
+            linear-gradient(160deg, #4a2a14 0%, #2a1808 55%, #180d04 100%);
+        }
+        .door-panel.door-open {
+          transform: rotateY(-108deg);
+        }
+
+        .door-panel-face {
+          position: absolute;
+          inset: 14px;
+          border: 2px solid rgba(180,120,50,0.35);
+          border-radius: 4px;
+          background:
+            repeating-linear-gradient(90deg, rgba(0,0,0,0.08) 0 2px, transparent 2px 26px);
+        }
+        .door-panel-face::before {
+          content: '';
+          position: absolute;
+          inset: 18px;
+          border: 2px solid rgba(180,120,50,0.25);
+          border-radius: 4px;
+        }
+
+        .door-panel-inner-light {
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at 30% 50%, rgba(255,225,140,0.9), rgba(255,180,60,0.3) 60%, transparent 80%);
+          transition: opacity 1.4s ease;
+          mix-blend-mode: screen;
+          pointer-events: none;
+        }
+
+        .lock-hang {
+          position: absolute;
+          right: -22px;
+          top: 42%;
+          width: 56px;
+          height: 56px;
+          padding: 0;
+          border: none;
+          background: transparent;
+          cursor: pointer;
+          transform-origin: top center;
+          animation: lockSwing 3s ease-in-out infinite;
+          filter: drop-shadow(0 0 6px rgba(232,192,106,0.5));
+          transition: filter 0.25s ease, transform 0.25s ease;
+        }
+        .lock-hang.lock-hover {
+          filter: drop-shadow(0 0 18px rgba(232,192,106,0.9));
+        }
+        .lock-hang.lock-unlocking {
+          animation: lockDrop 0.6s ease forwards;
+        }
+        .lock-hang.lock-unlocking .lock-shackle {
+          transform: translateY(-6px) rotate(-35deg);
+          transform-origin: 42px 26px;
+        }
+        .lock-shackle {
+          transition: transform 0.4s ease;
+        }
+        .lock-glow {
+          animation: breathe 2.5s ease-in-out infinite;
+        }
+
+        .door-hint {
+          position: absolute;
+          bottom: 12%;
+          left: 50%;
+          transform: translateX(-50%);
+          font-family: 'Cormorant Garamond', serif;
+          font-size: clamp(14px, 2vw, 20px);
+          font-style: italic;
+          color: rgba(200,212,232,0.6);
+          letter-spacing: 0.05em;
+          animation: breathe 3s ease-in-out infinite;
+          text-align: center;
+          pointer-events: none;
+        }
       `}</style>
     </div>
   );
 }
 
-function delay(ms: number) { return new Promise(resolve => setTimeout(resolve, ms)); }
-
 function drawForestPath(ctx: CanvasRenderingContext2D, W: number, H: number, t: number, progress: number) {
-  // Stone path
   const pathGrad = ctx.createLinearGradient(0, H * 0.55, 0, H);
   pathGrad.addColorStop(0, '#1a1a2e');
   pathGrad.addColorStop(1, '#0f0f1a');
@@ -497,7 +563,6 @@ function drawForestPath(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
   ctx.closePath();
   ctx.fill();
 
-  // Path stones
   for (let i = 0; i < 16; i++) {
     const py = H * 0.62 + (i / 16) * H * 0.35;
     const pw = 40 + Math.sin(i * 2.3) * 20;
@@ -508,7 +573,6 @@ function drawForestPath(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
     ctx.beginPath();
     ctx.ellipse(px, py, pw, 12, Math.sin(i) * 0.3, 0, Math.PI * 2);
     ctx.fill();
-    // Moss
     ctx.globalAlpha = 0.2;
     ctx.fillStyle = '#3a5a3a';
     ctx.beginPath();
@@ -517,7 +581,6 @@ function drawForestPath(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
     ctx.restore();
   }
 
-  // Glowing flowers along path
   for (let i = 0; i < 12; i++) {
     const angle = (i / 12) * Math.PI * 2 + t * 0.1;
     const px = W * 0.38 + Math.cos(angle * 3) * 40 + i * W * 0.02;
@@ -533,7 +596,6 @@ function drawForestPath(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
     ctx.restore();
   }
 
-  // Dense forest sides
   for (let side = 0; side < 2; side++) {
     const sx = side === 0 ? 0.05 : 0.75;
     for (let i = 0; i < 12; i++) {
@@ -553,7 +615,6 @@ function drawForestPath(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
     }
   }
 
-  // Fog
   const fog = ctx.createLinearGradient(0, H * 0.55, 0, H * 0.7);
   fog.addColorStop(0, 'transparent');
   fog.addColorStop(0.5, 'rgba(11,20,55,0.25)');
@@ -565,35 +626,28 @@ function drawForestPath(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
   ctx.restore();
 }
 
-function drawAncientGate(
-  ctx: CanvasRenderingContext2D,
-  centerX: number, H: number, t: number, isActive: boolean
-) {
+function drawAncientGate(ctx: CanvasRenderingContext2D, centerX: number, H: number, t: number) {
   const gateH = H * 0.6;
   const gateW = 200;
   ctx.save();
   ctx.translate(centerX, H - 40);
 
-  // Left pillar
   ctx.fillStyle = '#1a1a2e';
   ctx.fillRect(-gateW / 2 - 20, -gateH, 30, gateH);
   ctx.fillStyle = '#0f0f1a';
   ctx.fillRect(-gateW / 2 - 25, -gateH - 20, 40, 25);
 
-  // Right pillar
   ctx.fillStyle = '#1a1a2e';
   ctx.fillRect(gateW / 2 - 10, -gateH, 30, gateH);
   ctx.fillStyle = '#0f0f1a';
   ctx.fillRect(gateW / 2 - 15, -gateH - 20, 40, 25);
 
-  // Arch
   ctx.strokeStyle = '#1a1a2e';
   ctx.lineWidth = 20;
   ctx.beginPath();
   ctx.arc(0, -gateH + 5, gateW / 2 + 10, Math.PI, 0, false);
   ctx.stroke();
 
-  // Blue crystals on pillars
   const crystalPositions = [-gateW / 2 - 5, gateW / 2 + 15];
   crystalPositions.forEach(px => {
     for (let i = 0; i < 3; i++) {
@@ -614,7 +668,6 @@ function drawAncientGate(
     }
   });
 
-  // Vines
   ctx.save();
   ctx.globalAlpha = 0.5;
   ctx.strokeStyle = '#1a3a1a';
@@ -630,165 +683,6 @@ function drawAncientGate(
     ctx.stroke();
   }
   ctx.restore();
-
-  ctx.restore();
-}
-
-function drawMagicDoor(
-  ctx: CanvasRenderingContext2D,
-  centerX: number, H: number, t: number, openAngle: number, phase: WalkPhase,
-  isHoveringLock: boolean
-) {
-  const doorW = 120, doorH = H * 0.55;
-  ctx.save();
-  ctx.translate(centerX, H - 40);
-
-  // Door frame
-  ctx.strokeStyle = '#2a1800';
-  ctx.lineWidth = 20;
-  ctx.strokeRect(-doorW / 2 - 10, -doorH - 10, doorW + 20, doorH + 10);
-
-  // Portal glow behind the door
-  if (openAngle > 0) {
-    const portalIntensity = openAngle / 105;
-    
-    ctx.save();
-    // Inner light
-    const portalGrad = ctx.createLinearGradient(0, -doorH, 0, 0);
-    portalGrad.addColorStop(0, `rgba(255,250,200,${0.9 * portalIntensity})`);
-    portalGrad.addColorStop(0.5, `rgba(255,220,120,${0.8 * portalIntensity})`);
-    portalGrad.addColorStop(1, `rgba(255,180,50,${0.6 * portalIntensity})`);
-    ctx.fillStyle = portalGrad;
-    ctx.fillRect(-doorW / 2, -doorH, doorW, doorH);
-
-    // Magical rays
-    ctx.globalCompositeOperation = 'screen';
-    const numRays = 7;
-    for(let i=0; i<numRays; i++) {
-       const rayAngle = (Math.PI/2) + Math.sin(t * 1.5 + i) * 0.8;
-       const rayLength = 150 + Math.sin(t * 2 + i * 2) * 100 * portalIntensity;
-       const rayWidth = 15 + Math.sin(t * 3 + i) * 10;
-       
-       const rayGrad = ctx.createLinearGradient(0, -doorH/2, Math.cos(rayAngle) * rayLength, -doorH/2 - Math.sin(rayAngle) * rayLength);
-       rayGrad.addColorStop(0, `rgba(255,230,150,${0.4 * portalIntensity})`);
-       rayGrad.addColorStop(1, 'rgba(255,200,100,0)');
-       
-       ctx.beginPath();
-       ctx.moveTo(0, -doorH/2);
-       ctx.lineTo(Math.cos(rayAngle) * rayLength, -doorH/2 - Math.sin(rayAngle) * rayLength);
-       ctx.strokeStyle = rayGrad;
-       ctx.lineWidth = rayWidth;
-       ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  // Door with opening perspective
-  ctx.save();
-  if (openAngle > 0) {
-    const rad = (openAngle * Math.PI) / 180;
-    // Move origin to left hinge (-doorW / 2)
-    ctx.translate(-doorW / 2, 0);
-    // Apply 3D-like perspective: scale X, skew Y
-    ctx.transform(Math.cos(rad), Math.sin(rad) * 0.15, 0, 1, 0, 0);
-    // Move origin back
-    ctx.translate(doorW / 2, 0);
-  }
-
-  // Door body
-  const doorGrad = ctx.createLinearGradient(-doorW / 2, -doorH, doorW / 2, 0);
-  doorGrad.addColorStop(0, '#3a2010');
-  doorGrad.addColorStop(0.5, '#2a1808');
-  doorGrad.addColorStop(1, '#1a1005');
-  ctx.fillStyle = doorGrad;
-  ctx.fillRect(-doorW / 2, -doorH, doorW, doorH);
-
-  // Door panels
-  ctx.fillStyle = 'rgba(255,255,255,0.03)';
-  ctx.fillRect(-doorW / 2 + 10, -doorH + 15, doorW / 2 - 15, doorH * 0.45 - 15);
-  ctx.fillRect(5, -doorH + 15, doorW / 2 - 15, doorH * 0.45 - 15);
-  ctx.fillRect(-doorW / 2 + 10, -doorH * 0.5, doorW - 20, doorH * 0.45);
-
-  // Carved patterns
-  ctx.strokeStyle = 'rgba(180,120,50,0.3)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i < 3; i++) {
-    ctx.beginPath();
-    ctx.arc(0, -doorH * (0.3 + i * 0.25), 15, 0, Math.PI * 2);
-    ctx.stroke();
-  }
-
-  // Metal reinforcements
-  ctx.strokeStyle = '#2a2010';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(-doorW / 2, -doorH, doorW, doorH);
-  ctx.beginPath();
-  ctx.moveTo(-doorW / 2, -doorH / 2);
-  ctx.lineTo(doorW / 2, -doorH / 2);
-  ctx.stroke();
-
-  // Vines on door
-  ctx.save();
-  ctx.globalAlpha = 0.4;
-  ctx.strokeStyle = '#1a3a1a';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(-doorW / 2 + 5, -doorH);
-  ctx.bezierCurveTo(-doorW / 2 + 30, -doorH * 0.8, -doorW / 2 + 10, -doorH * 0.6, -doorW / 2 + 25, -doorH * 0.4);
-  ctx.stroke();
-  ctx.restore();
-
-  // Inner door shading when open to enhance 3D effect
-  if (openAngle > 0) {
-    ctx.fillStyle = `rgba(0,0,0,${Math.min(0.6, openAngle / 100)})`;
-    ctx.fillRect(-doorW / 2, -doorH, doorW, doorH);
-  }
-
-  ctx.restore();
-
-  // Lock (only shown when door phase)
-  if (phase === 'door' || phase === 'lock-zoom') {
-    const lockY = -doorH * 0.45;
-    const lockVibe = isHoveringLock ? Math.sin(t * 60) * 1.5 : 0;
-    const lockSwing = Math.sin(t * 0.8) * 4 + lockVibe;
-    ctx.save();
-    ctx.translate(doorW / 2 - 20 + lockSwing, lockY);
-
-    // Lock body
-    ctx.fillStyle = '#8B6914';
-    ctx.beginPath();
-    ctx.roundRect(-14, -10, 28, 24, 4);
-    ctx.fill();
-
-    // Lock shackle
-    ctx.strokeStyle = '#8B6914';
-    ctx.lineWidth = 5;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.arc(0, -10, 10, Math.PI, 0, false);
-    ctx.stroke();
-
-    // Lock keyhole
-    ctx.fillStyle = '#3a2808';
-    ctx.beginPath();
-    ctx.arc(0, -2, 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillRect(-3, -2, 6, 10);
-
-    // Lock engravings glow
-    ctx.save();
-    ctx.globalAlpha = 0.4 + 0.3 * Math.sin(t * 3);
-    ctx.strokeStyle = '#E8C06A';
-    ctx.lineWidth = 0.5;
-    ctx.shadowColor = '#E8C06A';
-    ctx.shadowBlur = isHoveringLock ? 25 : 8;
-    ctx.beginPath();
-    ctx.arc(0, -2, 8, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
-
-    ctx.restore();
-  }
 
   ctx.restore();
 }

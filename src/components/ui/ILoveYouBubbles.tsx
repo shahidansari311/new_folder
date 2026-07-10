@@ -47,8 +47,12 @@ export default function ILoveYouBubbles() {
   const [particles, setParticles] = useState<Particle[]>([]);
 
   useEffect(() => {
+    let cancelled = false;
+    const timers: NodeJS.Timeout[] = [];
+    
     // Periodically spawn new bubbles
     const spawnInterval = setInterval(() => {
+      if (cancelled) return;
       const id = Date.now() + Math.random();
       const newBubble: Bubble = {
         id,
@@ -64,12 +68,17 @@ export default function ILoveYouBubbles() {
       setBubbles(prev => [...prev, newBubble]);
 
       // Automatically clean up bubble after its lifetime
-      setTimeout(() => {
-        setBubbles(prev => prev.filter(b => b.id !== id));
+      const t = setTimeout(() => {
+        if (!cancelled) setBubbles(prev => prev.filter(b => b.id !== id));
       }, newBubble.duration * 1000 + 500);
+      timers.push(t);
     }, 2500);
 
-    return () => clearInterval(spawnInterval);
+    return () => {
+      cancelled = true;
+      clearInterval(spawnInterval);
+      timers.forEach(clearTimeout);
+    };
   }, []);
 
   // Update particles positions

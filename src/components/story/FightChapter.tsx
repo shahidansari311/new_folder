@@ -1,28 +1,43 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 interface Props { onComplete: () => void; }
 
 export default function FightChapter({ onComplete }: Props) {
   const [scene, setScene] = useState(0);
   const [contentOpacity, setContentOpacity] = useState(1);
 
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+
   useEffect(() => {
-    const triggerScene = (nextScene: number) => {
-      setContentOpacity(0);
-      setTimeout(() => {
-        setScene(nextScene);
-        setContentOpacity(1);
-      }, 500);
+    let cancelled = false;
+    let transitionTimer: NodeJS.Timeout;
+
+    const triggerScene = (nextScene: number, delay: number) => {
+      return setTimeout(() => {
+        if (cancelled) return;
+        setContentOpacity(0);
+        transitionTimer = setTimeout(() => {
+          if (cancelled) return;
+          setScene(nextScene);
+          setContentOpacity(1);
+        }, 500);
+      }, delay);
     };
 
     const timers = [
-      setTimeout(() => triggerScene(1), 3000),
-      setTimeout(() => triggerScene(2), 7000),
-      setTimeout(() => triggerScene(3), 11000),
-      setTimeout(() => onComplete(), 14000),
+      triggerScene(1, 3000),
+      triggerScene(2, 7000),
+      triggerScene(3, 11000),
+      setTimeout(() => { if (!cancelled) onCompleteRef.current(); }, 14000),
     ];
-    return () => timers.forEach(clearTimeout);
-  }, [onComplete]);
+
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+      if (transitionTimer) clearTimeout(transitionTimer);
+    };
+  }, []);
 
   const scenes = [
     { bg: 'linear-gradient(180deg, #1a1a3a 0%, #2a1020 100%)', rain: true,

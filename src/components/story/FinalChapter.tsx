@@ -7,12 +7,16 @@ export default function FinalChapter() {
   const animRef = useRef<number>(0);
 
   useEffect(() => {
+    let cancelled = false;
     const t = [
-      setTimeout(() => setPhase(1), 1000),
-      setTimeout(() => setPhase(2), 4000),
-      setTimeout(() => setPhase(3), 8000),
+      setTimeout(() => { if (!cancelled) setPhase(1); }, 1000),
+      setTimeout(() => { if (!cancelled) setPhase(2); }, 4000),
+      setTimeout(() => { if (!cancelled) setPhase(3); }, 8000),
     ];
-    return () => t.forEach(clearTimeout);
+    return () => {
+      cancelled = true;
+      t.forEach(clearTimeout);
+    };
   }, []);
 
   useEffect(() => {
