@@ -15,20 +15,16 @@ interface Message {
 
 // Hinglish romantic and happy birthday messages from the repository chat logs
 const MESSAGES: Message[] = [
-  { id: 1, sender: 'you', text: 'Heyyy..', time: '12:05 AM', type: 'text' },
-  { id: 2, sender: 'me', text: 'Happy Birthdayy Babe! ❤️🧿', time: '12:05 AM', type: 'text' },
-  { id: 3, sender: 'you', text: 'Thankuuu so mucch 🥹🥹', time: '12:06 AM', type: 'text' },
-  { id: 4, sender: 'you', text: 'Love youu🥹❤️', time: '12:06 AM', type: 'text' },
-  { id: 5, sender: 'me', text: 'Love you too 😗 always and forever', time: '12:06 AM', type: 'text' },
-  { id: 6, sender: 'you', text: 'Seriously best moment create kar diya aapne 🥹🥹', time: '12:07 AM', type: 'text' },
-  { id: 7, sender: 'me', text: 'Tumhe pasand aaya na? Bss yahi chahiye tha 😙✨', time: '12:07 AM', type: 'text' },
-  { id: 8, sender: 'you', text: 'Bohot jyada yrr! Par aapne ek br bhi pta ni chalne diya 🥺', time: '12:08 AM', type: 'text' },
-  { id: 9, sender: 'me', text: 'Hehe surprise tha na 🌚 Kuch khayi tum?', time: '12:08 AM', type: 'text' },
-  { id: 10, sender: 'you', text: 'Nhi abhi... Aapne kuch khaya?', time: '12:09 AM', type: 'text' },
-  { id: 11, sender: 'me', text: 'Nhi, bread kha ke chale the socho... Tumhare liye etna struggle 🥹', time: '12:09 AM', type: 'text' },
-  { id: 12, sender: 'you', text: 'Yrr tabhi mai sochuu... You are the best! ❤️', time: '12:10 AM', type: 'text' },
-  { id: 13, sender: 'me', text: 'I love you so much! 💞', time: '12:11 AM', type: 'text' },
-  { id: 14, sender: 'you', text: 'I love you moreee! 🫶🖇️', time: '12:12 AM', type: 'text' },
+  { id: 1, sender: 'me', text: 'Cutie 😙😙😙✨', time: '9:07 PM', type: 'text' },
+  { id: 2, sender: 'me', text: 'Love you 😙✨', time: '9:08 PM', type: 'text' },
+  { id: 3, sender: 'you', text: '🫶🙈', time: '9:19 PM', type: 'text' },
+  { id: 4, sender: 'me', text: '😙😙✨', time: '9:20 PM', type: 'text' },
+  { id: 5, sender: 'me', text: 'Khana kha li shona 😙😙✨', time: '9:20 PM', type: 'text' },
+  { id: 6, sender: 'you', text: 'Jii', time: '9:33 PM', type: 'text' },
+  { id: 7, sender: 'you', text: 'Aur aap', time: '9:33 PM', type: 'text' },
+  { id: 8, sender: 'me', text: 'Ha 😙😙✨', time: '9:36 PM', type: 'text' },
+  { id: 9, sender: 'me', text: 'Kissi 😙😙😙', time: '9:37 PM', type: 'text' },
+  { id: 10, sender: 'you', text: '🤭🤭', time: '9:38 PM', type: 'text' },
 ];
 
 export default function MessengerScene({ onComplete }: Props) {

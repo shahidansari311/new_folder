@@ -44,21 +44,21 @@ export default function FriendshipChapter({ onComplete }: Props) {
   const scenes = [
     {
       bg: 'linear-gradient(135deg, #F5E8C8, #EDE0B8)',
-      emoji: '🚶‍♂️🚶‍♀️',
-      title: 'Class Ke Baad...',
-      text: 'Kuch bhi ho, hum dono hamesha ek hi direction me saath chalte the.',
+      emoji: '♾️',
+      title: 'Puri Zindagi',
+      text: 'Khair maine to aapse puri zindagi ka sauda kiya tha pr ab ...',
     },
     {
       bg: 'linear-gradient(135deg, #E8F0FF, #D8E8FF)',
-      emoji: '💬',
-      title: 'Pehli Baar Baat',
-      text: 'Chhoti-chhoti baatein. Textbooks aur homework ki share. Bahut pyara feel hota tha.',
+      emoji: '🥺',
+      title: 'Saath Rehna Hai',
+      text: 'Mai apke saath rhna chahti hu ... mujhe chhodna hota to etne time se ku rukti',
     },
     {
       bg: 'linear-gradient(135deg, #F0E8FF, #E0D8FF)',
-      emoji: '✨',
-      title: 'Dheere Dheere...',
-      text: 'Pata hi nahi chala kab do strangers ek dusre ke itne close aa gye.',
+      emoji: '💖',
+      title: 'Miss You',
+      text: 'Normally etne pyare lagte h... I miss you so much 🥵',
     },
   ];
 
