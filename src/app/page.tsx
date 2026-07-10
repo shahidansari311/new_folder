@@ -26,8 +26,10 @@ export type Phase =
 
 export default function UniversePage() {
   const now = new Date();
-  const BIRTHDAY = new Date(now.getTime() + 10 * 1000); // Testing: 10 seconds from now
-  const isBirthday = now >= BIRTHDAY;
+  // 12 September 2026 00:00:00 local time
+  const BIRTHDAY = new Date('2026-09-12T00:00:00');
+  const BIRTHDAY_END = new Date('2026-09-13T00:00:00');
+  const isBirthday = now >= BIRTHDAY && now <= BIRTHDAY_END;
 
   const [phase, setPhase] = useState<Phase>(isBirthday ? 'midnight' : 'countdown');
   const [fadeOpacity, setFadeOpacity] = useState(0);
