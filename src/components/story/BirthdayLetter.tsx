@@ -3,70 +3,56 @@ import { useEffect, useRef, useState } from 'react';
 interface Props { onComplete: () => void; }
 
 const LETTER_LINES = [
-  { delay: 0.5, text: "Dear Akanksha," },
-  { delay: 1.5, text: "" },
-  { delay: 2.0, text: "Mujhe samajh nhi aa rha ye letter kaha se shuru karu." },
-  { delay: 3.2, text: "Jo mai bolna chahta hu, uske liye words hamesha kam pad jaate hain." },
-  { delay: 4.5, text: "" },
-  { delay: 5.0, text: "Par phir bhi ek koshish kr rha hu." },
-  { delay: 6.0, text: "" },
-  { delay: 6.8, text: "Tum jab us class me aayi thi, tab mujhe lagta tha sab normal hai." },
-  { delay: 8.2, text: "Wahi light blue shirt, khule baal, aur school bag." },
-  { delay: 9.5, text: "Wo mere liye ek din sab kuch ban jayega, maine kabhi socha ni tha." },
-  { delay: 11.0, text: "" },
-  { delay: 11.5, text: "Mujhe yaad nhi humne pehli baat kya ki thi." },
-  { delay: 12.8, text: "Bas itna yaad hai ki hum dono bahut hase the." },
-  { delay: 14.0, text: "" },
-  { delay: 14.8, text: "Aur kitna achha lag rha tha etni aasani se baat karna," },
-  { delay: 16.0, text: "ek aisi ladki se jise mai theek se jaanta bhi ni tha." },
-  { delay: 17.5, text: "" },
-  { delay: 18.2, text: "Bahut saari fight hui, silences aaye, aur wo baarish bhi." },
-  { delay: 19.8, text: "Aur wo moment jab tumne piche se mera haath pakda tha." },
-  { delay: 21.3, text: "" },
-  { delay: 22.0, text: "Tumne mujhe sikhaya ki pyaar me koi drama ni chahiye hota." },
-  { delay: 23.5, text: "Bas ek dusre ke sath rehna hi kaafi hai." },
-  { delay: 25.0, text: "" },
-  { delay: 25.8, text: "Tum mere liye kitni special ho, mai shabdo me bata ni sakta. 🥺" },
-  { delay: 27.2, text: "Isliye tumhare is birthday pe, maine tumhare liye ye chhota sa universe banaya h." },
-  { delay: 28.8, text: "Kyu ki ek duniya tumhare liye bahut chhoti lagti hai." },
-  { delay: 30.2, text: "" },
-  { delay: 31.0, text: "Happy Birthday, Akanksha. Hamesha aise hi khush rehna aur apna khyaal rakhna. 💙" },
-  { delay: 32.5, text: "" },
-  { delay: 33.2, text: "Always yours,", italic: true },
-  { delay: 34.2, text: "The boy from that classroom. 💙", italic: true },
+  { text: "Babe 🥺", type: "title" },
+  { text: "Mujhe samajh nhi aa rha ye kaha se shuru karu 😒" },
+  { text: "" },
+  { text: "Tum jab us class me aayi thi, tab mujhe lagta tha sab normal hai." },
+  { text: "Wahi light blue shirt, khule baal... kuch to alag lg rha tha 🧐" },
+  { text: "" },
+  { text: "Mujhe yaad nhi humne pehli baat kya ki thi." },
+  { text: "Bas itna yaad hai ki hum dono bahut hase the 🤩" },
+  { text: "" },
+  { text: "Aur kitna achha lag rha tha etni aasani se baat karna 🤗" },
+  { text: "Saare taare humare liye ek sath chamakne lage ✨" },
+  { text: "" },
+  { text: "Chale ab point pe aate h 😃" },
+  { text: "Tum mere liye kitni special ho, mai shabdo me bata ni sakta. 🥺" },
+  { text: "Isliye tumhare is birthday pe, maine tumhare liye ye chhota sa universe banaya h 💕" },
+  { text: "Kyu ki ek duniya tumhare liye bahut chhoti lagti hai." },
+  { text: "" },
+  { text: "Happy Birthday, Akanksha. Hamesha aise hi khush rehna 🤩" },
+  { text: "" },
+  { text: "i love you but yrr ab dur rehna hi sahi hai" },
+  { text: "humtumhe kabhi deserve hi nhi karte the tu, best ho" },
+  { text: "bahut yaad aati hai tumhari sachhi yrr" },
+  { text: "sorry bye please contact mat karna ab bss ye mera last hai" },
+  { text: "i mean humara last hai iske baad sb khatam" },
+  { text: "mujhe nhi pta hum isko deploy karnege bhi ki nhi" },
+  { text: "but kisi se bol e search karwa dene" },
+  { text: "" },
+  { text: "Always yours,", italic: true },
+  { text: "The boy from that classroom. 💙", italic: true },
 ];
 
 export default function BirthdayLetter({ onComplete }: Props) {
-  const [visibleLines, setVisibleLines] = useState<number[]>([]);
-  const containerRef = useRef<HTMLDivElement>(null);
-
   const onCompleteRef = useRef(onComplete);
-  useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+  const [showButton, setShowButton] = useState(false);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
     let cancelled = false;
-    const timers: NodeJS.Timeout[] = [];
-
-    LETTER_LINES.forEach((line, i) => {
-      const t = setTimeout(() => {
-        if (cancelled) return;
-        setVisibleLines(prev => [...prev, i]);
-        if (containerRef.current) {
-          containerRef.current.scrollTop = containerRef.current.scrollHeight;
-        }
-      }, line.delay * 1000);
-      timers.push(t);
-    });
-
-    const lastDelay = LETTER_LINES[LETTER_LINES.length - 1].delay * 1000;
-    const completeTimer = setTimeout(() => {
-      if (!cancelled) onCompleteRef.current();
-    }, lastDelay + 5000);
-    timers.push(completeTimer);
+    
+    // The animation takes 50s. Show continue button near the end.
+    const btnTimer = setTimeout(() => {
+      if (!cancelled) setShowButton(true);
+    }, 45000);
 
     return () => {
       cancelled = true;
-      timers.forEach(clearTimeout);
+      clearTimeout(btnTimer);
     };
   }, []);
 
@@ -76,96 +62,163 @@ export default function BirthdayLetter({ onComplete }: Props) {
       background: 'linear-gradient(135deg, #020617, #081326)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       padding: '32px 24px',
+      overflow: 'hidden'
     }}>
-      {/* Letter paper */}
+      {/* Letter container */}
       <div style={{
         width: 'min(640px, 92vw)',
-        maxHeight: '85vh',
+        height: '85vh',
         position: 'relative',
+        borderRadius: '4px',
+        background: 'linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03))',
+        backdropFilter: 'blur(30px)',
+        border: '1px solid rgba(255,255,255,0.1)',
+        boxShadow: '0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)',
+        overflow: 'hidden',
+        maskImage: 'linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)',
+        WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)',
       }}>
         {/* Paper texture */}
         <div style={{
           position: 'absolute', inset: 0,
           background: 'radial-gradient(ellipse at 20% 20%, rgba(255,255,255,0.03), transparent 60%)',
           pointerEvents: 'none',
-          zIndex: 2, borderRadius: '4px',
+          zIndex: 2,
         }} />
 
+        {/* Auto Scrolling Content */}
         <div
-          ref={containerRef}
+          className="scrolling-letter"
           style={{
-            padding: 'clamp(32px, 6vw, 60px)',
-            borderRadius: '4px',
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03))',
-            backdropFilter: 'blur(30px)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            boxShadow: '0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)',
-            maxHeight: '85vh',
-            overflowY: 'auto',
-            scrollBehavior: 'smooth',
+            padding: '40px',
+            position: 'absolute',
+            width: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '12px',
           }}
         >
           {/* Decorative top */}
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <div style={{ fontSize: '24px', marginBottom: '8px' }}>💌</div>
+          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <div style={{ fontSize: '28px', marginBottom: '8px' }}>💌</div>
             <div style={{
-              width: '60px', height: '1px',
+              width: '80px', height: '1px',
               background: 'linear-gradient(90deg, transparent, rgba(232,192,106,0.5), transparent)',
               margin: '0 auto',
             }} />
           </div>
 
           {/* Letter lines */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {LETTER_LINES.map((line, i) => (
-              <div
-                key={i}
-                style={{
-                  fontFamily: (line as any).italic ? "'Dancing Script', cursive" : "'Cormorant Garamond', serif",
-                  fontSize: i === 0
+          {LETTER_LINES.map((line, i) => (
+            <div
+              key={i}
+              style={{
+                fontFamily: line.italic ? "'Dancing Script', cursive" : "'Cormorant Garamond', serif",
+                fontSize: line.type === 'title'
+                  ? 'clamp(22px, 4vw, 32px)'
+                  : line.italic
                     ? 'clamp(18px, 3vw, 26px)'
-                    : (line as any).italic
-                      ? 'clamp(16px, 2.5vw, 22px)'
-                      : 'clamp(15px, 2vw, 20px)',
-                  fontStyle: (line as any).italic ? 'italic' : 'normal',
-                  fontWeight: i === 0 ? 600 : 400,
-                  color: i === 0 ? '#E8C06A' : 'rgba(200,212,232,0.88)',
-                  lineHeight: 1.8,
-                  minHeight: line.text === '' ? '16px' : undefined,
-                  opacity: visibleLines.includes(i) ? 1 : 0,
-                  transform: visibleLines.includes(i) ? 'none' : 'translateY(8px)',
-                  transition: 'opacity 0.8s ease, transform 0.8s ease',
-                  letterSpacing: i === 0 ? '0.02em' : '0.01em',
-                }}
-              >
-                {line.text}
-              </div>
-            ))}
-          </div>
+                    : 'clamp(16px, 2.5vw, 24px)',
+                fontStyle: line.italic ? 'italic' : 'normal',
+                fontWeight: line.type === 'title' ? 600 : 400,
+                color: line.type === 'title' ? '#E8C06A' : 'rgba(200,212,232,0.9)',
+                lineHeight: 1.8,
+                textAlign: 'center',
+                minHeight: line.text === '' ? '20px' : undefined,
+                letterSpacing: line.type === 'title' ? '0.05em' : '0.02em',
+                textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+              }}
+            >
+              {line.text}
+            </div>
+          ))}
 
           {/* Signature flourish */}
-          {visibleLines.length >= LETTER_LINES.length && (
-            <div style={{
-              marginTop: '32px',
-              borderTop: '1px solid rgba(232,192,106,0.2)',
-              paddingTop: '24px',
-              textAlign: 'center',
-              animation: 'fadeIn 1s ease',
+          <div style={{
+            marginTop: '60px',
+            borderTop: '1px solid rgba(232,192,106,0.2)',
+            paddingTop: '32px',
+            textAlign: 'center',
+            width: '60%',
+          }}>
+            <div style={{ fontSize: '32px', marginBottom: '12px' }}>🌙</div>
+            <p style={{
+              fontFamily: "'Cinzel', serif",
+              fontSize: '12px',
+              letterSpacing: '0.3em',
+              color: 'rgba(200,212,232,0.5)',
+              textTransform: 'uppercase',
             }}>
-              <div style={{ fontSize: '28px', marginBottom: '8px' }}>🌙</div>
-              <p style={{
-                fontFamily: "'Cinzel', serif",
-                fontSize: '11px',
-                letterSpacing: '0.25em',
-                color: 'rgba(200,212,232,0.4)',
-                textTransform: 'uppercase',
-              }}>
-                12 September 2026
-              </p>
-            </div>
-          )}
+              12 September 2026
+            </p>
+          </div>
         </div>
       </div>
+
+      {/* Complete Button */}
+      {showButton && (
+        <button
+          onClick={onComplete}
+          style={{
+            position: 'absolute',
+            bottom: '40px',
+            padding: '16px 48px',
+            borderRadius: '9999px',
+            background: 'linear-gradient(135deg, rgba(232,192,106,0.2), rgba(212,165,116,0.1))',
+            border: '1px solid rgba(232,192,106,0.4)',
+            color: '#E8C06A',
+            fontFamily: "'Cinzel', serif",
+            fontSize: '13px',
+            letterSpacing: '0.2em',
+            textTransform: 'uppercase',
+            cursor: 'pointer',
+            fontWeight: 600,
+            transition: 'all 0.4s ease',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+            animation: 'fadeInUp 1s ease forwards',
+            zIndex: 10,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(232,192,106,0.4), rgba(212,165,116,0.2))';
+            e.currentTarget.style.transform = 'translateY(-4px)';
+            e.currentTarget.style.boxShadow = '0 8px 30px rgba(232,192,106,0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'linear-gradient(135deg, rgba(232,192,106,0.2), rgba(212,165,116,0.1))';
+            e.currentTarget.style.transform = 'translateY(0)';
+            e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+          }}
+        >
+          End Chapter ✨
+        </button>
+      )}
+
+      <style>{`
+        .scrolling-letter {
+          animation: scrollUp 50s linear forwards;
+        }
+
+        @keyframes scrollUp {
+          0% {
+            transform: translateY(100vh);
+          }
+          100% {
+            transform: translateY(-110%);
+          }
+        }
+
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 }

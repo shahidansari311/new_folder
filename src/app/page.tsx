@@ -56,7 +56,7 @@ export default function UniversePage() {
       <UniverseCanvas phase={phase} />
 
       {/* Global interactive love bubbles floating in background */}
-      <ILoveYouBubbles />
+      {phase !== 'countdown' && <ILoveYouBubbles />}
 
       {/* Happy Birthday tag centered at top after countdown ends */}
       {phase !== 'countdown' && <HappyBirthdayTag />}

@@ -17,6 +17,29 @@ interface FireflyGuide {
   waiting: boolean; waitTimer: number;
 }
 
+// Pre-calculate natural, non-repeating positions for forest elements
+const TREES_LEFT = Array.from({ length: 7 }, (_, i) => ({
+  x: 0.02 + Math.random() * 0.15,
+  h: 0.45 + Math.random() * 0.15,
+  swaySpeed: 0.3 + Math.random() * 0.3
+}));
+const TREES_RIGHT = Array.from({ length: 7 }, (_, i) => ({
+  x: 0.75 + Math.random() * 0.2,
+  h: 0.45 + Math.random() * 0.15,
+  swaySpeed: 0.3 + Math.random() * 0.3
+}));
+const GROUND_PATCHES = Array.from({ length: 10 }, (_, i) => ({
+  xOffset: (Math.random() - 0.5) * 30,
+  y: 0.6 + Math.random() * 0.35,
+  w: 30 + Math.random() * 30
+}));
+const WILL_O_WISPS = Array.from({ length: 8 }, (_, i) => ({
+  x: 0.35 + Math.random() * 0.3,
+  y: 0.6 + Math.random() * 0.3,
+  speed: 1 + Math.random() * 2,
+  phase: Math.random() * Math.PI * 2
+}));
+
 export default function ForestWalk({ phase: experiencePhase, onDoorReached, onUnlocked }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [walkPhase, setWalkPhase] = useState<WalkPhase>('walk');
@@ -563,57 +586,68 @@ function drawForestPath(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
   ctx.closePath();
   ctx.fill();
 
-  for (let i = 0; i < 16; i++) {
-    const py = H * 0.62 + (i / 16) * H * 0.35;
-    const pw = 40 + Math.sin(i * 2.3) * 20;
-    const px = W / 2 + Math.sin(i * 1.7) * 15;
+  // Non-repeating ground patches
+  GROUND_PATCHES.forEach((patch, i) => {
+    const py = H * patch.y;
+    const px = W / 2 + patch.xOffset;
     ctx.save();
-    ctx.globalAlpha = 0.5 + Math.sin(i) * 0.2;
+    ctx.globalAlpha = 0.4 + (i % 3) * 0.1;
     ctx.fillStyle = '#2a2a3e';
     ctx.beginPath();
-    ctx.ellipse(px, py, pw, 12, Math.sin(i) * 0.3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 0.2;
-    ctx.fillStyle = '#3a5a3a';
-    ctx.beginPath();
-    ctx.ellipse(px - 5, py - 3, pw * 0.3, 5, -0.3, 0, Math.PI * 2);
+    ctx.ellipse(px, py, patch.w, 12, patch.w * 0.01, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
-  }
+  });
 
-  for (let i = 0; i < 12; i++) {
-    const angle = (i / 12) * Math.PI * 2 + t * 0.1;
-    const px = W * 0.38 + Math.cos(angle * 3) * 40 + i * W * 0.02;
-    const py = H * 0.65 + Math.sin(i * 1.7) * 30 + i * H * 0.025;
+  // Non-repeating glowing wisps
+  WILL_O_WISPS.forEach(wisp => {
+    const angle = wisp.phase + t * wisp.speed * 0.2;
+    const px = W * wisp.x + Math.cos(angle) * 30;
+    const py = H * wisp.y + Math.sin(angle) * 20;
     ctx.save();
-    ctx.globalAlpha = 0.6 + 0.3 * Math.sin(t * 2 + i);
+    ctx.globalAlpha = 0.4 + 0.4 * Math.sin(t * wisp.speed + wisp.phase);
     ctx.beginPath();
     ctx.arc(px, py, 3, 0, Math.PI * 2);
     ctx.fillStyle = '#4DAFFF';
     ctx.shadowColor = '#4DAFFF';
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = 12;
     ctx.fill();
     ctx.restore();
-  }
+  });
 
-  for (let side = 0; side < 2; side++) {
-    const sx = side === 0 ? 0.05 : 0.75;
-    for (let i = 0; i < 12; i++) {
-      const x = (sx + i * 0.025) * W;
-      const treeH = H * 0.5 + Math.sin(i * 2.1) * H * 0.1;
-      const sway = Math.sin(t * 0.4 + i) * 5;
-      ctx.save();
-      ctx.globalAlpha = 0.9;
-      ctx.fillStyle = '#020814';
-      ctx.beginPath();
-      ctx.moveTo(x + sway, H - treeH);
-      ctx.lineTo(x - 22, H);
-      ctx.lineTo(x + 22, H);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
-    }
-  }
+  // Non-repeating organic trees (Left)
+  TREES_LEFT.forEach((tree, i) => {
+    const x = tree.x * W;
+    const treeH = H * tree.h;
+    const sway = Math.sin(t * tree.swaySpeed + i) * 4;
+    ctx.save();
+    ctx.globalAlpha = 0.92;
+    ctx.fillStyle = '#020814';
+    ctx.beginPath();
+    ctx.moveTo(x + sway, H - treeH);
+    ctx.lineTo(x - 25, H);
+    ctx.lineTo(x + 25, H);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // Non-repeating organic trees (Right)
+  TREES_RIGHT.forEach((tree, i) => {
+    const x = tree.x * W;
+    const treeH = H * tree.h;
+    const sway = Math.sin(t * tree.swaySpeed + i + 5) * 4;
+    ctx.save();
+    ctx.globalAlpha = 0.92;
+    ctx.fillStyle = '#020814';
+    ctx.beginPath();
+    ctx.moveTo(x + sway, H - treeH);
+    ctx.lineTo(x - 25, H);
+    ctx.lineTo(x + 25, H);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  });
 
   const fog = ctx.createLinearGradient(0, H * 0.55, 0, H * 0.7);
   fog.addColorStop(0, 'transparent');
