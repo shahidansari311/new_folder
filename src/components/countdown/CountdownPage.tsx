@@ -61,10 +61,10 @@ function RollingDigit({ value, label }: { value: number; label: string }) {
     }}>
       <div style={{
         position: 'relative',
-        width: 'clamp(80px, 14vw, 160px)',
-        height: 'clamp(90px, 16vw, 180px)',
+        width: 'clamp(50px, 14vw, 160px)',
+        height: 'clamp(65px, 16vw, 180px)',
         overflow: 'hidden',
-        borderRadius: '16px',
+        borderRadius: '12px',
         background: 'rgba(255,255,255,0.05)',
         backdropFilter: 'blur(30px)',
         border: '1px solid rgba(255,255,255,0.1)',
@@ -88,7 +88,7 @@ function RollingDigit({ value, label }: { value: number; label: string }) {
           <div style={{
             position: 'absolute',
             fontFamily: "'Cormorant Garamond', serif",
-            fontSize: 'clamp(48px, 9vw, 110px)',
+            fontSize: 'clamp(28px, 7vw, 110px)',
             fontWeight: 300,
             color: '#F0F4FF',
             textShadow: '0 0 30px rgba(77,175,255,0.5)',
@@ -103,7 +103,7 @@ function RollingDigit({ value, label }: { value: number; label: string }) {
         {/* Current digit - rolling in */}
         <div style={{
           fontFamily: "'Cormorant Garamond', serif",
-          fontSize: 'clamp(48px, 9vw, 110px)',
+          fontSize: 'clamp(28px, 7vw, 110px)',
           fontWeight: 300,
           color: '#F0F4FF',
           textShadow: '0 0 30px rgba(77,175,255,0.4), 0 0 60px rgba(77,175,255,0.2)',
@@ -184,7 +184,7 @@ export default function CountdownPage({ targetDate, onComplete }: Props) {
         justifyContent: 'center',
         opacity,
         transition: 'opacity 2s ease',
-        padding: '24px',
+        padding: '12px',
       }}
     >
       {/* Cosmic subtle vignette */}
@@ -212,8 +212,8 @@ export default function CountdownPage({ targetDate, onComplete }: Props) {
       <div style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 'clamp(8px, 2vw, 24px)',
-        padding: 'clamp(24px, 4vw, 48px)',
+        gap: 'clamp(4px, 1.5vw, 24px)',
+        padding: 'clamp(12px, 3vw, 48px)',
         borderRadius: '24px',
         background: 'rgba(255,255,255,0.03)',
         backdropFilter: 'blur(40px)',
@@ -282,7 +282,7 @@ function Separator() {
     <div style={{
       display: 'flex',
       flexDirection: 'column',
-      gap: 'clamp(8px, 2vw, 16px)',
+      gap: 'clamp(4px, 1vw, 16px)',
       marginBottom: '28px',
     }}>
       {[0, 1].map(i => (
