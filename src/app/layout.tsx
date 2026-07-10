@@ -2,15 +2,48 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'A Universe For Akanksha',
-  description: 'A magical interactive universe crafted with love for a very special birthday.',
-  keywords: ['birthday', 'love', 'magical', 'universe', 'Akanksha'],
-  authors: [{ name: 'Made with love' }],
+  metadataBase: new URL("https://akankshahid-birthday.vercel.app"),
+
+  title: {
+    default: "A Universe For Akanksha",
+    template: "%s | A Universe For Akanksha",
+  },
+
+  description:
+    "A magical interactive birthday experience created with love.",
+
+  keywords: [
+    "birthday",
+    "interactive",
+    "akanksha",
+    "universe",
+    "gift",
+    "Akankshahid",
+    "Happy birthday akanksha",
+    "Suprise 12 septmber ",
+    "birthday gift for akanksha",
+    "birthday gift for a girl of age 20",
+    "birthday gift for a girl of age 21"
+  ],
+
+  authors: [{ name: "Shahid Ansari" }],
+
+  creator: "Shahid Ansari",
+
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
+
+  alternates: {
+    canonical: "/",
   },
 };
+
 
 export const viewport: Viewport = {
   width: 'device-width',
