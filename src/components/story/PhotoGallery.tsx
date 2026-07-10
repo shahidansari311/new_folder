@@ -5,6 +5,15 @@ import { useState, useEffect } from 'react';
 // NOTE TO DEVELOPER: 
 // Replace these Unsplash URLs with the actual paths to Akanksha's images.
 // Place your images in the `public/gallery/` folder and reference them like: '/gallery/image1.jpg'
+// Helper to transform Google Drive viewer links into direct image/video fetch links
+function getDirectDriveLink(url: string) {
+  const match = url.match(/\/d\/(.+?)\//);
+  if (match && match[1]) {
+    return `https://drive.google.com/uc?export=view&id=${match[1]}`;
+  }
+  return url;
+}
+
 export interface GalleryItem {
   id: number;
   url: string;
@@ -13,44 +22,44 @@ export interface GalleryItem {
 }
 
 const GALLERY_IMAGES: GalleryItem[] = [
-  { id: 1, url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=800', caption: 'That beautiful smile that lights up my world ✨', extraText: 'You have no idea how much this smile means to me. It is the best thing I get to see every single day.' },
-  { id: 2, url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=800', caption: 'Looking gorgeous as always 💖' },
-  { id: 3, url: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=800', caption: 'My favorite picture of you 🦋' },
-  { id: 4, url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=800', caption: 'The cutest person in the universe 🌍' },
-  { id: 5, url: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&q=80&w=800', caption: 'Forever mine ♾️', extraText: 'If I had to live my life over again, I would find you sooner so I could love you longer.' },
-  { id: 6, url: 'https://images.unsplash.com/photo-1517365830460-955ce3ccd263?auto=format&fit=crop&q=80&w=800', caption: 'So precious 🥺❤️' },
-  { id: 7, url: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&q=80&w=800', caption: 'Lost in your eyes 💫' },
-  { id: 8, url: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&q=80&w=800', caption: 'Every moment with you is magic ✨' },
-  { id: 9, url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=800', caption: 'Just perfect ❤️' },
-  { id: 10, url: 'https://images.unsplash.com/photo-1526401485004-46910ecc8e51?auto=format&fit=crop&q=80&w=800', caption: 'Always making my heart skip a beat 💓' },
-  { id: 11, url: 'https://images.unsplash.com/photo-1464863979621-258859e62245?auto=format&fit=crop&q=80&w=800', caption: 'So full of life and joy 🌸' },
-  { id: 12, url: 'https://images.unsplash.com/photo-1507081323647-4d250478b8ae?auto=format&fit=crop&q=80&w=800', caption: 'Can’t stop looking at you 🥰' },
-  { id: 13, url: 'https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?auto=format&fit=crop&q=80&w=800', caption: 'That one time we laughed so hard 😂' },
-  { id: 14, url: 'https://images.unsplash.com/photo-1485875437342-9b39470b3d95?auto=format&fit=crop&q=80&w=800', caption: 'Always shining bright 🌟' },
-  { id: 15, url: 'https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&q=80&w=800', caption: 'My peace and happiness 🥺' },
-  { id: 16, url: 'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?auto=format&fit=crop&q=80&w=800', caption: 'Your vibe is everything ✨' },
-  { id: 17, url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=800', caption: 'You make every day better 💕' },
-  { id: 18, url: 'https://images.unsplash.com/photo-1503185912284-5271ff81b9a8?auto=format&fit=crop&q=80&w=800', caption: 'Just beautiful. Period. 💯' },
-  { id: 19, url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=800', caption: 'That goofy smile 🥺😂' },
-  { id: 20, url: 'https://images.unsplash.com/photo-1531123897727-8f129e1bf98a?auto=format&fit=crop&q=80&w=800', caption: 'You look amazing even when you don’t try 😳' },
-  { id: 21, url: 'https://images.unsplash.com/photo-1518577915332-c2a19f149a75?auto=format&fit=crop&q=80&w=800', caption: 'My sunshine ☀️' },
-  { id: 22, url: 'https://images.unsplash.com/photo-1524502397800-2eeaad7c3fe5?auto=format&fit=crop&q=80&w=800', caption: 'Can stare at this picture forever ⏳' },
-  { id: 23, url: 'https://images.unsplash.com/photo-1542206395-9feb3edaa68d?auto=format&fit=crop&q=80&w=800', caption: 'The one who holds my heart 🔐' },
-  { id: 24, url: 'https://images.unsplash.com/photo-1517462964-21fdcec3f25b?auto=format&fit=crop&q=80&w=800', caption: 'Memories to last a lifetime 📸' },
-  { id: 25, url: 'https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?auto=format&fit=crop&q=80&w=800', caption: 'Love you always ❤️' },
-  { id: 26, url: 'https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?auto=format&fit=crop&q=80&w=800', caption: 'Love you always ❤️' },
-  { id: 27, url: 'https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?auto=format&fit=crop&q=80&w=800', caption: 'Love you always ❤️' },
-  { id: 28, url: 'https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?auto=format&fit=crop&q=80&w=800', caption: 'Love you always ❤️' },
-  { id: 29, url: 'https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?auto=format&fit=crop&q=80&w=800', caption: 'Love you always ❤️' },
-  { id: 30, url: 'https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?auto=format&fit=crop&q=80&w=800', caption: 'Love you always ❤️' }
+  { id: 1, url: 'https://drive.google.com/file/d/1rKfrHquFix38TFe1GKDkHnuSiaizG0cA/view?usp=drive_link', caption: 'Choti si akanskha ✨' },
+  { id: 2, url: 'https://drive.google.com/file/d/14E_H5xxYcJFZZHEmvsioyw1UHU7FNti7/view?usp=drive_link', caption: 'Looking gorgeous as always 💖' },
+  { id: 3, url: 'https://drive.google.com/file/d/1h2HdFLHjm1krAv_M0JbZbvCABYAYGn6B/view?usp=drive_link', caption: 'My favorite picture of you 🦋' },
+  { id: 4, url: 'https://drive.google.com/file/d/1yxeShCdd5ZAI33XCQ2nJDw997cLtH-aQ/view?usp=drive_link', caption: 'The cutest person in the universe 🌍' },
+  { id: 5, url: 'https://drive.google.com/file/d/1YLPtDk7kZPVpHXm3gybhJpSs6xcugYsw/view?usp=drive_link', caption: 'Forever mine ♾️', extraText: 'If I had to live my life over again, I would find you sooner so I could love you longer.' },
+  { id: 6, url: 'https://drive.google.com/file/d/1JSIN65C7hGqGMe68Tk3p85FORgyxLmpZ/view?usp=drive_link', caption: 'So precious 🥺❤️' },
+  { id: 7, url: 'https://drive.google.com/file/d/1VQ952VPvk_hd9assp90OAFsDopWQQzB-/view?usp=drive_link', caption: 'Lost in your eyes 💫' },
+  { id: 8, url: 'https://drive.google.com/file/d/1LBvaL_oJoU8EyVBdnffsH-GAPtSEXBnd/view?usp=drive_link', caption: 'Every moment with you is magic ✨' },
+  { id: 9, url: 'https://drive.google.com/file/d/1n0V-GkUPSuXZyfBocPmpEd7zxCy8tqp-/view?usp=drive_link', caption: 'Just perfect ❤️' },
+  { id: 10, url: 'https://drive.google.com/file/d/1rMX3E-nRZQ0VMQNUm075Rz48lqXm5C1e/view?usp=drive_link', caption: 'Always making my heart skip a beat 💓' },
+  { id: 11, url: 'https://drive.google.com/file/d/1tSssAZW_0vkXz7XALgWw1HABf48NGfCl/view?usp=drive_link', caption: 'So full of life and joy 🌸' },
+  { id: 12, url: 'https://drive.google.com/file/d/1elcGJGKmMvQKETiGtI9lAuVrKcIjBDH2/view?usp=drive_link', caption: 'Can’t stop looking at you 🥰' },
+  { id: 13, url: 'https://drive.google.com/file/d/1IbPeAgHk__-8HuWftCRB_oTJFWSnQclx/view?usp=drive_link', caption: 'That one time we laughed so hard 😂' },
+  { id: 14, url: 'https://drive.google.com/file/d/1MZCt0S63no-P1avs5olTsKVHzZcXm10h/view?usp=drive_link', caption: 'Always shining bright 🌟' },
+  { id: 15, url: 'https://drive.google.com/file/d/15adHeJnWbeXMIpZkAFWKQdsV6NNUB56n/view?usp=drive_link', caption: 'My peace and happiness 🥺' },
+  { id: 16, url: 'https://drive.google.com/file/d/1Q-4LhnZ81q-WeiTE7nhhNaMDi6L06noU/view?usp=drive_link', caption: 'Your vibe is everything ✨' },
+  { id: 17, url: 'https://drive.google.com/file/d/1oSewlxNCZVuGOLDFzoUsLuP-zG7al4jV/view?usp=drive_link', caption: 'You make every day better 💕' },
+  { id: 18, url: 'https://drive.google.com/file/d/1h-8vrJOWtCx-rRDYVdupDDHaN-eolsNK/view?usp=drive_link', caption: 'Just beautiful. Period. 💯' },
+  { id: 19, url: 'https://drive.google.com/file/d/1Voi7ZDoS3tMOrZYrbk7psCsxSyAKmymu/view?usp=drive_link', caption: 'That goofy smile 🥺😂' },
+  { id: 20, url: 'https://drive.google.com/file/d/1AmG-goGGWwCGdQvRQWq0zDg6elNQWS1o/view?usp=drive_link', caption: 'You look amazing even when you don’t try 😳' },
+  { id: 21, url: 'https://drive.google.com/file/d/1pPhP8hVhSJIvu1vUjwlzpM0TmlDk60ki/view?usp=drive_link', caption: 'My sunshine ☀️' },
+  { id: 22, url: 'https://drive.google.com/file/d/1bIxqyQ-DqSGoAaEmALA7mKClGixD1LLX/view?usp=drive_link', caption: 'Can stare at this picture forever ⏳' },
+  { id: 23, url: 'https://drive.google.com/file/d/1errX2hEGf7wMAz0cgdhhgSnRmJdlxU8q/view?usp=drive_link', caption: 'The one who holds my heart 🔐' },
+  { id: 24, url: 'https://drive.google.com/file/d/1Yosg_Q_szF8orHoL4z6r9iRP2FcHuECT/view?usp=drive_link', caption: 'Memories to last a lifetime 📸' },
+  { id: 25, url: 'https://drive.google.com/file/d/1Gb9YYnQJJpWtbAW1p9gDm2ai98klAZtH/view?usp=drive_link', caption: 'Love you always ❤️' },
+  { id: 26, url: 'https://drive.google.com/file/d/1tLdOYXJxdqD6MPysHSVy5qLY7tnqNzpQ/view?usp=drive_link', caption: 'Love you always ❤️' },
+  { id: 27, url: 'https://drive.google.com/file/d/1OVbCU032CN_6NM7ya4WrvX4nWPsQfEUk/view?usp=drive_link', caption: '❤️' },
+  { id: 28, url: 'https://drive.google.com/file/d/1Rk6wA35Cm6pzjS5sNtMiEaHE1V3MJgOk/view?usp=drive_link', caption: 'Love you always ❤️' },
+  { id: 29, url: 'https://drive.google.com/file/d/10P0Fg1654C2ITtqmy05rU0Vncjvtsu21/view?usp=drive_link', caption: 'Love you always ❤️' },
+  { id: 30, url: 'https://drive.google.com/file/d/17uPfAsxOt6kuZ4L4-ms6qSa46W0uzVoM/view?usp=drive_link', caption: 'Tumhari roti ❤️' }
 ];
 
 const GALLERY_VIDEOS: GalleryItem[] = [
-  { id: 1, url: 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-sign-1232-large.mp4', caption: 'A night to remember 🌃' },
-  { id: 2, url: 'https://assets.mixkit.co/videos/preview/mixkit-tree-branches-in-the-breeze-1188-large.mp4', caption: 'Peaceful moments together 🍃' },
-  { id: 3, url: 'https://assets.mixkit.co/videos/preview/mixkit-a-girl-blowing-a-dandelion-beauty-in-nature-1228-large.mp4', caption: 'Just being happy 😊' },
-  { id: 4, url: 'https://assets.mixkit.co/videos/preview/mixkit-hands-holding-a-glowing-star-1185-large.mp4', caption: 'You are my star ✨' },
-  { id: 5, url: 'https://assets.mixkit.co/videos/preview/mixkit-sun-setting-over-the-ocean-1227-large.mp4', caption: 'Beautiful sunsets 🌅' },
+  { id: 1, url: 'https://drive.google.com/file/d/1HEfkPWUDOF_BmtvZ8XxjspqvGG2kuAaV/view?usp=drive_link', caption: 'Peaceful moments together 🍃' },
+  { id: 2, url: 'https://drive.google.com/file/d/1wxAagtT6fI9h0pAmg8BX_X_hud3aR3ij/view?usp=drive_link', caption: 'Just being happy 😊' },
+  { id: 3, url: 'https://drive.google.com/file/d/1iASXHrVr0iHFe3yryjelgzCs_EFLKHv9/view?usp=drive_link', caption: 'tumhara speech 🌃' },
+  { id: 4, url: 'https://drive.google.com/file/d/1I_rAJcOIWHyifsgmM9Ogb0Z3ewWAj2W9/view?usp=drive_link', caption: 'You are my star ✨' },
+  { id: 5, url: 'https://drive.google.com/file/d/1VMuB0cXsFr7bhf-5Z3drTSV_qW8bCHse/view?usp=drive_link', caption: 'Beautiful sunsets 🌅' },
 ];
 
 interface CarouselProps {
@@ -132,6 +141,8 @@ function CarouselDeck({ items, type, title }: CarouselProps) {
             opacity = diff > 2 ? 0 : 0.6; // Fade out the deepest card
           }
 
+          const directUrl = getDirectDriveLink(item.url);
+
           return (
             <div
               key={item.id}
@@ -158,7 +169,7 @@ function CarouselDeck({ items, type, title }: CarouselProps) {
             >
               {type === 'image' ? (
                 <img
-                  src={item.url}
+                  src={directUrl}
                   alt={item.caption}
                   style={{
                     width: '100%',
@@ -169,7 +180,7 @@ function CarouselDeck({ items, type, title }: CarouselProps) {
                 />
               ) : (
                 <video
-                  src={item.url}
+                  src={directUrl}
                   autoPlay
                   loop
                   muted
