@@ -26,7 +26,11 @@ export const metadata: Metadata = {
     "birthday gift for a girl of age 21",
     "digital birthday gift",
     "interactive birthday website",
-    "love letter"
+    "love letter",
+    "akanksha birthday 2026",
+    "best birthday website",
+    "romantic birthday gift for girlfriend",
+    "shahid and akanksha"
   ],
 
   authors: [{ name: "Shahid Ansari" }],
