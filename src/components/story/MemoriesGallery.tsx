@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import SecretLetterModal from './SecretLetterModal';
 
 interface ChatMessage {
   sender: 'Shahid' | 'Akanksha';
@@ -127,18 +128,16 @@ const CHAT_MEMORIES: ChatMemory[] = [
   },
   {
     id: 6,
-    title: 'Rainy Day Care',
-    date: '04 Oct 2025',
-    icon: '🌧️',
+    title: 'Maje Maje',
+    date: '11 Jan 2025',
+    icon: '👶',
     color: '#0f766e',
-    preview: 'Shahid: Hum de dete h | Akanksha: KitKat...',
+    preview: 'Akanksha: Aisa baby ho jaye...',
     messages: [
-      { sender: 'Akanksha', text: 'Mai to bheeg gyi pura 🌧️ Bahut tez barish ho rhi thi. Abhi to bahut dard h mn ni', time: '10:19 AM', type: 'text' },
-      { sender: 'Shahid', text: 'Achha kuch mangwa de', time: '10:29 AM', type: 'text' },
-      { sender: 'Akanksha', text: 'Nii. Delivery charge le rha tha 🥹', time: '10:34 AM', type: 'text' },
-      { sender: 'Shahid', text: 'Hum de dete h😒 Bolti nhi ho tum', time: '10:35 AM', type: 'text' },
-      { sender: 'Akanksha', text: 'Ky bolti ki order kar dijiye 😒', time: '10:40 AM', type: 'text' },
-      { sender: 'Akanksha', text: 'Par khair thank you kit kat khane ka bahut din se mn tha 🥹', time: '11:13 AM', type: 'text' },
+      { sender: 'Akanksha', text: 'Kitna cute h 🩷', time: '11:39 PM', type: 'text' },
+      { sender: 'Shahid', text: 'Hmm hmm ❤️🫠', time: '11:40 PM', type: 'text' },
+      { sender: 'Akanksha', text: 'Aisa baby ho jaye maje maje🤩', time: '11:41 PM', type: 'text' },
+      { sender: 'Shahid', text: 'Achha 🫠🫠', time: '11:42 PM', type: 'text' },
     ],
   },
   {
@@ -153,6 +152,49 @@ const CHAT_MEMORIES: ChatMemory[] = [
       { sender: 'Akanksha', text: 'I am sorry mai aise ni chhod sakti I love you💞🙂‍↕️🫰 always and forever', time: '1:01 AM', type: 'text' },
       { sender: 'Akanksha', text: 'Na mano par i love you💞🫰🥹', time: '1:16 AM', type: 'text' },
     ],
+  },
+  {
+    id: 12,
+    title: 'Mai Gir Gyi To',
+    date: '24 Nov 2024',
+    icon: '🛵',
+    color: '#0f172a',
+    preview: 'Akanksha: Mai gir gyi to😒...',
+    messages: [
+      { sender: 'Akanksha', text: 'Ku mujhe kuch ni pta😉', time: '12:57 AM', type: 'text' },
+      { sender: 'Shahid', text: 'Sb pta hai', time: '12:57 AM', type: 'text' },
+      { sender: 'Akanksha', text: 'Mai gir gyi to😒', time: '12:57 AM', type: 'text' },
+      { sender: 'Shahid', text: 'Sb jankari daba ke rkhi ho 🫠', time: '12:57 AM', type: 'text' },
+      { sender: 'Shahid', text: 'Nhi girogi 😒', time: '12:57 AM', type: 'text' },
+      { sender: 'Akanksha', text: 'Abhi pta hi ky h🌚', time: '12:58 AM', type: 'text' },
+      { sender: 'Shahid', text: 'Abhi se practice karo waise baithne ka', time: '12:58 AM', type: 'text' },
+    ],
+  },
+  {
+    id: 13,
+    title: 'Doraemon & Calls',
+    date: '29 Sep 2025',
+    icon: '📺',
+    color: '#0369a1',
+    preview: 'Akanksha: Doreamon dekh rhi thi...',
+    messages: [
+      { sender: 'Akanksha', text: 'Doreamon dekh rhi thi', time: '11:54 PM', type: 'text' },
+      { sender: 'Shahid', text: 'Mujhe to mana kar di call karne se 🌞', time: '11:54 PM', type: 'text' },
+      { sender: 'Shahid', text: 'Achha achha dekho dekho 🌞', time: '11:54 PM', type: 'text' },
+      { sender: 'Akanksha', text: 'Maine kb kiya😒😒', time: '11:55 PM', type: 'text' },
+      { sender: 'Shahid', text: 'Ki thi 🌞', time: '11:55 PM', type: 'text' },
+      { sender: 'Akanksha', text: 'Aap khud ni karte😒', time: '11:55 PM', type: 'text' },
+      { sender: 'Shahid', text: 'Nhi 🌞 ab mana kar di', time: '11:55 PM', type: 'text' },
+    ],
+  },
+  {
+    id: 999,
+    title: 'A Secret Letter',
+    date: 'For You',
+    icon: '💌',
+    color: '#831843',
+    preview: 'Tap to open the envelope...',
+    messages: [],
   },
 ];
 
@@ -337,8 +379,11 @@ export default function MemoriesGallery({ onComplete }: Props) {
 
       {/* Selected Chat Dialogue Modal */}
       {selected && (
-        <div
-          onClick={() => setSelected(null)}
+        selected.id === 999 ? (
+          <SecretLetterModal onClose={() => setSelected(null)} />
+        ) : (
+          <div
+            onClick={() => setSelected(null)}
           style={{
             position: 'fixed',
             inset: 0,
@@ -545,6 +590,7 @@ export default function MemoriesGallery({ onComplete }: Props) {
             </div>
           </div>
         </div>
+        )
       )}
 
       {/* Custom Keyframes for zooming chat dialog */}

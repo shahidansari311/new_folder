@@ -5,12 +5,12 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://akankshahid-birthday.vercel.app"),
 
   title: {
-    default: "A Universe For Akanksha",
+    default: "A Universe For Akanksha | Happy Birthday",
     template: "%s | A Universe For Akanksha",
   },
 
   description:
-    "A magical interactive birthday experience created with love.",
+    "A magical, interactive digital universe created with love for Akanksha's birthday. Explore our memories, messages, and a special time-traveling journey. Created by Shahid.",
 
   keywords: [
     "birthday",
@@ -20,15 +20,41 @@ export const metadata: Metadata = {
     "gift",
     "Akankshahid",
     "Happy birthday akanksha",
-    "Suprise 12 septmber ",
+    "Surprise 12 september",
     "birthday gift for akanksha",
     "birthday gift for a girl of age 20",
-    "birthday gift for a girl of age 21"
+    "birthday gift for a girl of age 21",
+    "digital birthday gift",
+    "interactive birthday website",
+    "love letter"
   ],
 
   authors: [{ name: "Shahid Ansari" }],
-
   creator: "Shahid Ansari",
+
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    url: "https://akankshahid-birthday.vercel.app",
+    title: "A Universe For Akanksha | Happy Birthday",
+    description: "A magical, interactive digital universe created with love for Akanksha's birthday. Enter the time portal and explore our memories.",
+    siteName: "A Universe For Akanksha",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "A Universe For Akanksha Preview",
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "A Universe For Akanksha | Happy Birthday",
+    description: "A magical, interactive digital universe created with love for Akanksha's birthday.",
+    images: ["/og-image.jpg"],
+  },
 
   robots: {
     index: true,
@@ -36,6 +62,9 @@ export const metadata: Metadata = {
     googleBot: {
       index: true,
       follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
     },
   },
 
@@ -43,7 +72,6 @@ export const metadata: Metadata = {
     canonical: "/",
   },
 };
-
 
 export const viewport: Viewport = {
   width: 'device-width',

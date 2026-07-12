@@ -15,16 +15,16 @@ interface Message {
 
 // Hinglish romantic and happy birthday messages from the repository chat logs
 const MESSAGES: Message[] = [
-  { id: 1, sender: 'me', text: 'Cutie 😙😙😙✨', time: '9:07 PM', type: 'text' },
-  { id: 2, sender: 'me', text: 'Love you 😙✨', time: '9:08 PM', type: 'text' },
-  { id: 3, sender: 'you', text: '🫶🙈', time: '9:19 PM', type: 'text' },
-  { id: 4, sender: 'me', text: '😙😙✨', time: '9:20 PM', type: 'text' },
-  { id: 5, sender: 'me', text: 'Khana kha li shona 😙😙✨', time: '9:20 PM', type: 'text' },
-  { id: 6, sender: 'you', text: 'Jii', time: '9:33 PM', type: 'text' },
-  { id: 7, sender: 'you', text: 'Aur aap', time: '9:33 PM', type: 'text' },
-  { id: 8, sender: 'me', text: 'Ha 😙😙✨', time: '9:36 PM', type: 'text' },
-  { id: 9, sender: 'me', text: 'Kissi 😙😙😙', time: '9:37 PM', type: 'text' },
-  { id: 10, sender: 'you', text: '🤭🤭', time: '9:38 PM', type: 'text' },
+  { id: 1, sender: 'me', text: 'Shona 🥺', time: '11:58 PM', type: 'text' },
+  { id: 2, sender: 'you', text: 'Jii bolo 🫶', time: '11:59 PM', type: 'text' },
+  { id: 3, sender: 'me', text: 'Kuch batana tha tumhe...', time: '11:59 PM', type: 'text' },
+  { id: 4, sender: 'me', text: 'Tum mere liye is duniya ki sabse special ladki ho 🥺❤️', time: '11:59 PM', type: 'text' },
+  { id: 5, sender: 'me', text: 'Happy Birthday Meri Jaan! 🎂✨', time: '12:00 AM', type: 'text' },
+  { id: 6, sender: 'me', text: 'Tumhara har sapna pura ho, hamesha khush raho meri khushi 🥺', time: '12:00 AM', type: 'text' },
+  { id: 7, sender: 'you', text: 'Aww thank you babyy 🥹❤️', time: '12:01 AM', type: 'text' },
+  { id: 8, sender: 'me', text: 'Love you the most, meri noor-e-hayat ♾️💙', time: '12:01 AM', type: 'text' },
+  { id: 9, sender: 'me', text: 'Ekdam cute si babu si 😙😙😙', time: '12:01 AM', type: 'text' },
+  { id: 10, sender: 'you', text: '🤭🙈', time: '12:02 AM', type: 'text' },
 ];
 
 export default function MessengerScene({ onComplete }: Props) {

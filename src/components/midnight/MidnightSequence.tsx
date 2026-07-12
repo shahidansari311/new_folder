@@ -352,6 +352,28 @@ export default function MidnightSequence({ onComplete }: Props) {
           alignItems: 'center', justifyContent: 'center',
           gap: '16px',
         }}>
+          {/* Birthday Girl Photo Frame */}
+          <div style={{
+            width: 'clamp(120px, 20vw, 180px)', 
+            height: 'clamp(120px, 20vw, 180px)',
+            borderRadius: '24px',
+            background: 'linear-gradient(135deg, rgba(232,192,106,0.15), rgba(255,255,255,0.05))',
+            border: '2px solid rgba(232,192,106,0.6)',
+            boxShadow: '0 0 40px rgba(232,192,106,0.4)',
+            marginBottom: '10px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            overflow: 'hidden',
+            position: 'relative',
+            backdropFilter: 'blur(10px)',
+            opacity: titlePhase === 'dissolving' ? 0 : 1,
+            transform: titlePhase === 'forming' ? 'scale(0.5) translateY(30px)' : 'scale(1) translateY(0)',
+            transition: 'all 2s cubic-bezier(0.16,1,0.3,1)',
+          }}>
+            <span style={{ fontSize: 'clamp(40px, 8vw, 60px)', opacity: 0.8 }}>👸</span>
+            {/* Using API proxy to bypass Google Drive CORS restrictions */}
+            <img src="/api/drive-proxy?id=1n0V-GkUPSuXZyfBocPmpEd7zxCy8tqp-" alt="Birthday Girl" style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover' }} />
+          </div>
+
           <div style={{
             fontFamily: "'Cinzel', serif",
             fontSize: 'clamp(24px, 5vw, 72px)',

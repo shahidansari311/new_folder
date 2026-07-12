@@ -1,19 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // Helper to transform Google Drive viewer links into direct image/video fetch links
-function getDirectDriveLink(url: string, type: 'image' | 'video') {
+function getDirectDriveLink(url: string) {
   const match = url.match(/\/d\/(.+?)\//);
   if (match && match[1]) {
     const id = match[1];
-    if (type === 'image') {
-      // Use the thumbnail trick which avoids strict CORP blocking for images
-      return `https://drive.google.com/thumbnail?id=${id}&sz=w1000`;
-    } else {
-      // Route videos through our Next.js API proxy to strip CORP headers and enable streaming
-      return `/api/drive-proxy?id=${id}`;
-    }
+    // Route both images and videos through our Next.js API proxy to strip CORP headers and enable display
+    return `/api/drive-proxy?id=${id}`;
   }
   return url;
 }
@@ -55,16 +50,46 @@ const GALLERY_IMAGES: GalleryItem[] = [
   { id: 27, url: 'https://drive.google.com/file/d/1OVbCU032CN_6NM7ya4WrvX4nWPsQfEUk/view?usp=drive_link', caption: '❤️' },
   { id: 28, url: 'https://drive.google.com/file/d/1Rk6wA35Cm6pzjS5sNtMiEaHE1V3MJgOk/view?usp=drive_link', caption: 'Love you always ❤️' },
   { id: 29, url: 'https://drive.google.com/file/d/10P0Fg1654C2ITtqmy05rU0Vncjvtsu21/view?usp=drive_link', caption: 'Love you always ❤️' },
-  { id: 30, url: 'https://drive.google.com/file/d/17uPfAsxOt6kuZ4L4-ms6qSa46W0uzVoM/view?usp=drive_link', caption: 'Tumhari roti ❤️' }
+  { id: 30, url: 'https://drive.google.com/file/d/17uPfAsxOt6kuZ4L4-ms6qSa46W0uzVoM/view?usp=drive_link', caption: 'Tumhari roti ❤️' },
+  { id: 31, url: 'https://drive.google.com/file/d/100u242qy3Dn64XU3qKYr2WMpXcsEH1E0/view?usp=drive_link', caption: '❤️' }
 ];
 
 const GALLERY_VIDEOS: GalleryItem[] = [
-  { id: 1, url: 'https://drive.google.com/file/d/1HEfkPWUDOF_BmtvZ8XxjspqvGG2kuAaV/view?usp=drive_link', caption: 'Peaceful moments together 🍃' },
-  { id: 2, url: 'https://drive.google.com/file/d/1wxAagtT6fI9h0pAmg8BX_X_hud3aR3ij/view?usp=drive_link', caption: 'Just being happy 😊' },
+  { id: 1, url: 'https://drive.google.com/file/d/1VMuB0cXsFr7bhf-5Z3drTSV_qW8bCHse/view?usp=drive_link', caption: '🌅' },
+  { id: 2, url: 'https://drive.google.com/file/d/1wxAagtT6fI9h0pAmg8BX_X_hud3aR3ij/view?usp=drive_link', caption: 'Again tumhari driving 😊' },
   { id: 3, url: 'https://drive.google.com/file/d/1iASXHrVr0iHFe3yryjelgzCs_EFLKHv9/view?usp=drive_link', caption: 'tumhara speech 🌃' },
-  { id: 4, url: 'https://drive.google.com/file/d/1I_rAJcOIWHyifsgmM9Ogb0Z3ewWAj2W9/view?usp=drive_link', caption: 'You are my star ✨' },
-  { id: 5, url: 'https://drive.google.com/file/d/1VMuB0cXsFr7bhf-5Z3drTSV_qW8bCHse/view?usp=drive_link', caption: 'Beautiful sunsets 🌅' },
+  { id: 4, url: 'https://drive.google.com/file/d/1I_rAJcOIWHyifsgmM9Ogb0Z3ewWAj2W9/view?usp=drive_link', caption: '✨' },
+  { id: 5, url: 'https://drive.google.com/file/d/1HEfkPWUDOF_BmtvZ8XxjspqvGG2kuAaV/view?usp=drive_link', caption: 'Tumhari driving 🍃' },
 ];
+
+function VideoItem({ src, isMuted, isTop, animatingOut }: { src: string; isMuted: boolean; isTop: boolean; animatingOut: boolean }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    if (videoRef.current) {
+      videoRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
+
+  return (
+    <video
+      ref={videoRef}
+      src={src}
+      autoPlay
+      loop
+      muted={isMuted}
+      playsInline
+      style={{
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+        pointerEvents: 'none',
+        opacity: isTop && !animatingOut ? 1 : 0.6,
+        transition: 'opacity 0.4s ease',
+      }}
+    />
+  );
+}
 
 interface CarouselProps {
   items: GalleryItem[];
@@ -75,10 +100,14 @@ interface CarouselProps {
 function CarouselDeck({ items, type, title }: CarouselProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [animatingOut, setAnimatingOut] = useState(false);
+  const [userMuted, setUserMuted] = useState(true);
 
   const handleNext = () => {
     if (animatingOut) return;
     setAnimatingOut(true);
+    // When switching videos, re-mute automatically to prevent sudden loud noises
+    setUserMuted(true);
+    window.dispatchEvent(new CustomEvent('resume-bg-music'));
     setTimeout(() => {
       setActiveIndex((prev) => (prev + 1) % items.length);
       setAnimatingOut(false);
@@ -86,6 +115,13 @@ function CarouselDeck({ items, type, title }: CarouselProps) {
   };
 
   const activeItem = items[activeIndex];
+
+  // Also clean up when component unmounts
+  useEffect(() => {
+    return () => {
+      window.dispatchEvent(new CustomEvent('resume-bg-music'));
+    };
+  }, []);
 
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '80px' }}>
@@ -145,7 +181,7 @@ function CarouselDeck({ items, type, title }: CarouselProps) {
             opacity = diff > 2 ? 0 : 0.6; // Fade out the deepest card
           }
 
-          const directUrl = getDirectDriveLink(item.url, type);
+          const directUrl = getDirectDriveLink(item.url);
 
           return (
             <div
@@ -183,22 +219,59 @@ function CarouselDeck({ items, type, title }: CarouselProps) {
                   }}
                 />
               ) : (
-                <video
+                <VideoItem
                   src={directUrl}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    pointerEvents: 'none',
-                    opacity: isTop && !animatingOut ? 1 : 0.6,
-                    transition: 'opacity 0.4s ease',
-                  }}
+                  isMuted={!isTop || animatingOut || userMuted}
+                  isTop={isTop}
+                  animatingOut={animatingOut}
                 />
               )}
+
+              {/* Audio Toggle Button for Top Video */}
+              {type === 'video' && isTop && !animatingOut && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const newMuted = !userMuted;
+                    setUserMuted(newMuted);
+                    if (newMuted) {
+                      window.dispatchEvent(new CustomEvent('resume-bg-music'));
+                    } else {
+                      window.dispatchEvent(new CustomEvent('pause-bg-music'));
+                    }
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: '16px',
+                    right: '16px',
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.5)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    color: '#FFF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    zIndex: 20,
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(0,0,0,0.7)';
+                    e.currentTarget.style.transform = 'scale(1.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(0,0,0,0.5)';
+                    e.currentTarget.style.transform = 'scale(1)';
+                  }}
+                >
+                  {userMuted ? '🔇' : '🔊'}
+                </button>
+              )}
+
               {/* Caption Overlay */}
               <div
                 style={{

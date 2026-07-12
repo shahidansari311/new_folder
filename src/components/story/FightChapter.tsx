@@ -40,12 +40,12 @@ export default function FightChapter({ onComplete }: Props) {
   }, []);
 
   const scenes = [
-    { bg: 'linear-gradient(180deg, #1a1a3a 0%, #2a1020 100%)', rain: true,
-      icon: '🌧️', title: 'Wo Baarish', subtitle: 'Lagta tha jaise aasman ko bhi pata tha ki kuch galat hua hai.' },
-    { bg: 'linear-gradient(180deg, #0d0d2a 0%, #1a0a20 100%)', rain: true,
-      icon: '💔', title: 'Wo Khamoshi', subtitle: 'Mai aage badh raha tha... Aur tum wahi ruk gyi.' },
-    { bg: 'linear-gradient(180deg, #0d1a2a 0%, #101a30 100%)', rain: false,
-      icon: '🤝', title: 'Tumne Mera Haath Pakda', subtitle: 'Dheere se. Peeche se. Tumne mera haath pakad liya.\n\nAur wahi sab kuch ruk gya.' },
+    { bg: 'linear-gradient(180deg, #2a1020 0%, #3a1030 100%)', rain: false,
+      icon: '🌼', title: 'Wo Tumhari Wishes', subtitle: '“Happy birthday meri jaan ko 😙😙”\n\nTumhara wo excitement mujhe hamesha muskurane pe majboor kar deta hai.' },
+    { bg: 'linear-gradient(180deg, #3a1030 0%, #4a1540 100%)', rain: false,
+      icon: '🤭', title: 'Wo Pyari Baatein', subtitle: '“Love youu 🥹❤️”\n\nTumhari wo choti choti pyaari baatein mera din bana deti thi.' },
+    { bg: 'linear-gradient(180deg, #4a1540 0%, #101a30 100%)', rain: false,
+      icon: '♾️', title: 'Sabse Khoobsurat Hissa', subtitle: '“...chahe aise hi ladte-jhagadte, roothte-manate hi sahi, par aap meri zindagi ka sabse khoobsurat hissa bani rahi.”\n\nTum bhi meri zindagi ka sabse pyara hissa thi.' },
   ];
 
   const s = scenes[scene] || scenes[0];

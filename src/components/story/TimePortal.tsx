@@ -71,32 +71,37 @@ export default function TimePortal({ onComplete }: Props) {
       if (!cancelled) setShowCalendar(true);
     }, 2000);
 
-    // Year counting down
+    // Year counting down — starts AFTER the calendar appears, shows 2026 first
     let yr = 2026;
     let t2: NodeJS.Timeout;
     let t3: NodeJS.Timeout;
+    let yearInterval: NodeJS.Timeout;
 
-    const yearInterval = setInterval(() => {
+    const startCountdown = setTimeout(() => {
       if (cancelled) return;
-      yr--;
-      setYear(yr);
-      if (yr <= 2020) {
-        clearInterval(yearInterval);
-        t2 = setTimeout(() => {
-          if (cancelled) return;
-          setShowCalendar(false);
-          t3 = setTimeout(() => {
-            if (!cancelled) onCompleteRef.current();
-          }, 1500);
-        }, 2000);
-      }
-    }, 400);
+      yearInterval = setInterval(() => {
+        if (cancelled) return;
+        yr--;
+        setYear(yr);
+        if (yr <= 2020) {
+          clearInterval(yearInterval);
+          t2 = setTimeout(() => {
+            if (cancelled) return;
+            setShowCalendar(false);
+            t3 = setTimeout(() => {
+              if (!cancelled) onCompleteRef.current();
+            }, 1500);
+          }, 2000);
+        }
+      }, 150);
+    }, 3000); // 2s for calendar to appear + 1s to show 2026
 
     return () => {
       cancelled = true;
       cancelAnimationFrame(animRef.current);
-      clearInterval(yearInterval);
+      if (yearInterval) clearInterval(yearInterval);
       clearTimeout(t1);
+      clearTimeout(startCountdown);
       if (t2) clearTimeout(t2);
       if (t3) clearTimeout(t3);
     };
@@ -114,21 +119,26 @@ export default function TimePortal({ onComplete }: Props) {
           zIndex: 2,
         }}>
           <div style={{
-            padding: '40px 60px',
-            borderRadius: '20px',
+            padding: 'clamp(30px, 6vw, 50px) clamp(30px, 8vw, 80px)',
+            borderRadius: '24px',
             background: 'rgba(255,255,255,0.15)',
-            backdropFilter: 'blur(20px)',
+            backdropFilter: 'blur(25px)',
             border: '1px solid rgba(255,255,255,0.3)',
             textAlign: 'center',
+            width: '90%',
+            maxWidth: '500px',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
           }}>
-            <div style={{
+            <div 
+              key={year}
+              style={{
               fontFamily: "'Cinzel', serif",
-              fontSize: 'clamp(48px, 10vw, 120px)',
+              fontSize: 'clamp(60px, 18vw, 130px)',
               fontWeight: 600,
               color: '#020617',
               letterSpacing: '-0.02em',
-              transition: 'all 0.3s ease',
               lineHeight: 1,
+              animation: 'popIn 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
             }}>
               {year}
             </div>
@@ -156,6 +166,13 @@ export default function TimePortal({ onComplete }: Props) {
           </div>
         </div>
       )}
+      <style>{`
+        @keyframes popIn {
+          0% { transform: scale(0.9); opacity: 0.8; }
+          50% { transform: scale(1.05); opacity: 1; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 }

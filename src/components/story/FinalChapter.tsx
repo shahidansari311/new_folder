@@ -83,20 +83,39 @@ export default function FinalChapter() {
         </div>
 
         {phase >= 1 && (
-          <h1 style={{
-            fontFamily: "'Dancing Script', cursive",
-            fontSize: 'clamp(36px, 8vw, 90px)',
-            fontWeight: 700,
-            background: 'linear-gradient(135deg, #E8C06A, #FFD700, #D4A574)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-            filter: 'drop-shadow(0 0 30px rgba(232,192,106,0.5))',
-            marginBottom: '16px',
-            animation: 'fadeInUp 1s ease forwards',
-          }}>
-            Happy Birthday, Akanksha!
-          </h1>
+          <div style={{ animation: 'fadeInUp 1s ease forwards', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            {/* Image Placeholder for Birthday Girl */}
+            <div style={{
+              width: '120px', height: '120px',
+              borderRadius: '24px',
+              background: 'linear-gradient(135deg, rgba(232,192,106,0.15), rgba(255,255,255,0.05))',
+              border: '2px solid rgba(232,192,106,0.6)',
+              boxShadow: '0 0 30px rgba(232,192,106,0.3)',
+              marginBottom: '24px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              overflow: 'hidden',
+              position: 'relative',
+              backdropFilter: 'blur(10px)'
+            }}>
+              <span style={{ fontSize: '40px', opacity: 0.8 }}>👸</span>
+              {/* Add her photo here by uncommenting the img tag and putting the file in /public */}
+              {/* <img src="/birthday-girl.jpg" alt="Birthday Girl" style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover' }} /> */}
+            </div>
+
+            <h1 style={{
+              fontFamily: "'Dancing Script', cursive",
+              fontSize: 'clamp(36px, 8vw, 90px)',
+              fontWeight: 700,
+              background: 'linear-gradient(135deg, #E8C06A, #FFD700, #D4A574)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              filter: 'drop-shadow(0 0 30px rgba(232,192,106,0.5))',
+              marginBottom: '16px',
+            }}>
+              Happy Birthday, Akanksha!
+            </h1>
+          </div>
         )}
 
         {phase >= 2 && (

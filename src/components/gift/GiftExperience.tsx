@@ -264,25 +264,26 @@ export default function GiftExperience({ onComplete }: Props) {
 
     const gState = giftRef.current;
     
-    // 1. Gift Compresses & Vibrates
-    gState.targetScaleX = 1.1;
-    gState.targetScaleY = 0.85;
-    gState.vibration = 4;
-    gState.targetLight = 0.6; // Light leaks
+    // 1. Gift Compresses & Vibrates (Intensified)
+    gState.targetScaleX = 1.15;
+    gState.targetScaleY = 0.8;
+    gState.vibration = 6;
+    gState.targetLight = 0.8; // Light leaks
 
     // Spawn magic particles rapidly
     let magicInterval = setInterval(() => {
-      for(let i=0; i<3; i++) spawnParticle('magic');
-    }, 50);
+      for(let i=0; i<5; i++) spawnParticle('magic');
+      for(let i=0; i<2; i++) spawnParticle('ray');
+    }, 40);
 
     // 2. Swell & Unlock
     timersRef.current.push(setTimeout(() => {
-      gState.targetScaleX = 0.95;
-      gState.targetScaleY = 1.1;
-      gState.vibration = 8;
-      gState.targetLight = 1.0;
-      cameraRef.current.targetZoom = 1.15; // Camera pushes in
-      cameraRef.current.targetYOffset = 50;
+      gState.targetScaleX = 0.9;
+      gState.targetScaleY = 1.2;
+      gState.vibration = 12;
+      gState.targetLight = 2.0;
+      cameraRef.current.targetZoom = 1.25; // Camera pushes in deeper
+      cameraRef.current.targetYOffset = 60;
 
       // Unlock snap
       timersRef.current.push(setTimeout(() => {
@@ -292,30 +293,32 @@ export default function GiftExperience({ onComplete }: Props) {
         gState.unlocked = true; // Ribbon detaches
         clearInterval(magicInterval);
         
-        // Massive burst of light & particles
-        for(let i=0; i<40; i++) spawnParticle('ray');
-        for(let i=0; i<30; i++) spawnParticle('magic');
+        // Massive burst of light & particles (Flash bang effect)
+        gState.lightIntensity = 4.0;
+        for(let i=0; i<80; i++) spawnParticle('ray');
+        for(let i=0; i<60; i++) spawnParticle('magic');
+        for(let i=0; i<30; i++) spawnParticle('pollen');
 
         // 3. Slow Lid Open
         setPhase('opening');
         let openStartTime = performance.now();
         const animateLid = () => {
           const elapsed = (performance.now() - openStartTime) / 1000;
-          const duration = 2.5; // slow open
+          const duration = 2.8; // slow open
           if (elapsed < duration) {
             const progress = elapsed / duration;
             // Elastic out for natural wooden weight overshoot
-            gState.lidAngle = easeOutElastic(progress) * 110; 
-            gState.targetLight = 1.5 + progress * 0.5;
+            gState.lidAngle = easeOutElastic(progress) * 125; 
+            gState.targetLight = 1.5 + progress * 1.5;
             requestAnimationFrame(animateLid);
           } else {
-            gState.lidAngle = 110;
+            gState.lidAngle = 125;
             // 4. Blooming Phase
             setPhase('blooming');
             let bloomStartTime = performance.now();
             const animateBloom = () => {
               const bElapsed = (performance.now() - bloomStartTime) / 1000;
-              const bDuration = 3.0;
+              const bDuration = 3.5;
               if (bElapsed < bDuration) {
                 gState.bloomProgress = easeOutCubic(bElapsed / bDuration);
                 requestAnimationFrame(animateBloom);
@@ -327,7 +330,7 @@ export default function GiftExperience({ onComplete }: Props) {
                   setShowBouquet(true);
                   cameraRef.current.targetZoom = 1; // Pull back
                   cameraRef.current.targetYOffset = 0;
-                }, 1000));
+                }, 1200));
               }
             };
             animateBloom();
@@ -335,8 +338,8 @@ export default function GiftExperience({ onComplete }: Props) {
         };
         animateLid();
 
-      }, 800)); // Snap delay
-    }, 1200)); // Swell delay
+      }, 1000)); // Snap delay
+    }, 1500)); // Swell delay
 
   }, [phase]);
 

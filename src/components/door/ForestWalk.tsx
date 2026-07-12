@@ -574,8 +574,73 @@ export default function ForestWalk({ phase: experiencePhase, onDoorReached, onUn
 }
 
 function drawForestPath(ctx: CanvasRenderingContext2D, W: number, H: number, t: number, progress: number) {
+  // ━━━ STARFIELD ━━━
+  ctx.save();
+  for (let i = 0; i < 60; i++) {
+    const sx = ((i * 137.5) % W + W) % W;
+    const sy = ((i * 89.3) % (H * 0.55));
+    const twinkle = 0.3 + 0.7 * Math.abs(Math.sin(t * (0.5 + i * 0.1) + i));
+    ctx.globalAlpha = twinkle * 0.8;
+    ctx.fillStyle = i % 7 === 0 ? '#4DAFFF' : i % 11 === 0 ? '#E8C06A' : '#C8D4E8';
+    ctx.beginPath();
+    ctx.arc(sx, sy, i % 5 === 0 ? 1.5 : 0.8, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // ━━━ MOON ━━━
+  const moonX = W * 0.78, moonY = H * 0.12, moonR = 35;
+  ctx.save();
+  // Moon glow halo
+  const moonGlow = ctx.createRadialGradient(moonX, moonY, 0, moonX, moonY, moonR * 8);
+  moonGlow.addColorStop(0, 'rgba(200,220,255,0.08)');
+  moonGlow.addColorStop(0.3, 'rgba(120,160,220,0.03)');
+  moonGlow.addColorStop(1, 'transparent');
+  ctx.fillStyle = moonGlow;
+  ctx.fillRect(0, 0, W, H * 0.6);
+  // Moon body
+  ctx.beginPath();
+  ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(220,235,255,0.9)';
+  ctx.shadowColor = 'rgba(200,220,255,0.6)';
+  ctx.shadowBlur = 40;
+  ctx.fill();
+  // Craters
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = 'rgba(180,200,230,0.3)';
+  ctx.beginPath(); ctx.arc(moonX - 8, moonY - 5, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(moonX + 10, moonY + 8, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(moonX + 2, moonY + 12, 3, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+
+  // ━━━ BACKGROUND TREE SILHOUETTES (far layer) ━━━
+  ctx.save();
+  ctx.globalAlpha = 0.4;
+  for (let i = 0; i < 12; i++) {
+    const tx = ((i * 97) % W);
+    const th = H * (0.25 + (i % 3) * 0.08);
+    const sway = Math.sin(t * 0.15 + i * 2) * 2;
+    ctx.fillStyle = '#060d1a';
+    // Organic tree canopy (multiple circles)
+    const canopyY = H - th;
+    ctx.beginPath();
+    ctx.arc(tx + sway, canopyY + 15, 22 + (i % 3) * 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(tx + sway - 12, canopyY + 25, 18 + (i % 2) * 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(tx + sway + 10, canopyY + 22, 16 + (i % 4) * 4, 0, Math.PI * 2);
+    ctx.fill();
+    // Trunk
+    ctx.fillRect(tx - 4 + sway, canopyY + 30, 8, th - 30);
+  }
+  ctx.restore();
+
+  // ━━━ PATH ━━━
   const pathGrad = ctx.createLinearGradient(0, H * 0.55, 0, H);
   pathGrad.addColorStop(0, '#1a1a2e');
+  pathGrad.addColorStop(0.4, '#161628');
   pathGrad.addColorStop(1, '#0f0f1a');
   ctx.fillStyle = pathGrad;
   ctx.beginPath();
@@ -586,28 +651,80 @@ function drawForestPath(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
   ctx.closePath();
   ctx.fill();
 
-  // Non-repeating ground patches
+  // Moonlight on path
+  ctx.save();
+  ctx.globalCompositeOperation = 'screen';
+  const moonlightGrad = ctx.createRadialGradient(W * 0.5, H * 0.65, 0, W * 0.5, H * 0.65, W * 0.25);
+  moonlightGrad.addColorStop(0, 'rgba(140,170,220,0.06)');
+  moonlightGrad.addColorStop(1, 'transparent');
+  ctx.fillStyle = moonlightGrad;
+  ctx.fillRect(0, H * 0.55, W, H * 0.45);
+  ctx.restore();
+
+  // ━━━ GROUND DETAILS ━━━
   GROUND_PATCHES.forEach((patch, i) => {
     const py = H * patch.y;
     const px = W / 2 + patch.xOffset;
     ctx.save();
-    ctx.globalAlpha = 0.4 + (i % 3) * 0.1;
-    ctx.fillStyle = '#2a2a3e';
+    ctx.globalAlpha = 0.3 + (i % 3) * 0.08;
+    ctx.fillStyle = i % 2 === 0 ? '#222240' : '#1e1e38';
     ctx.beginPath();
-    ctx.ellipse(px, py, patch.w, 12, patch.w * 0.01, 0, Math.PI * 2);
+    ctx.ellipse(px, py, patch.w, 8, patch.w * 0.01, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   });
 
-  // Non-repeating glowing wisps
+  // ━━━ GLOWING MUSHROOMS ━━━
+  const mushrooms = [
+    { x: 0.28, y: 0.78, color: '#4DAFFF', size: 1 },
+    { x: 0.72, y: 0.82, color: '#A855F7', size: 0.8 },
+    { x: 0.22, y: 0.88, color: '#4DAFFF', size: 0.6 },
+    { x: 0.68, y: 0.72, color: '#A855F7', size: 0.9 },
+    { x: 0.32, y: 0.92, color: '#4CAF8A', size: 0.7 },
+  ];
+  mushrooms.forEach((m, i) => {
+    const mx = W * m.x;
+    const my = H * m.y;
+    const pulse = 0.5 + 0.5 * Math.sin(t * 1.5 + i * 1.8);
+    ctx.save();
+    ctx.globalAlpha = 0.4 + pulse * 0.3;
+    // Glow
+    const glow = ctx.createRadialGradient(mx, my, 0, mx, my, 20 * m.size);
+    glow.addColorStop(0, m.color + '40');
+    glow.addColorStop(1, 'transparent');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(mx, my, 20 * m.size, 0, Math.PI * 2);
+    ctx.fill();
+    // Stem
+    ctx.fillStyle = '#2a2a40';
+    ctx.fillRect(mx - 1.5, my, 3, 8 * m.size);
+    // Cap
+    ctx.fillStyle = m.color;
+    ctx.beginPath();
+    ctx.ellipse(mx, my, 6 * m.size, 4 * m.size, 0, Math.PI, 0);
+    ctx.fill();
+    ctx.restore();
+  });
+
+  // ━━━ GLOWING WISPS ━━━
   WILL_O_WISPS.forEach(wisp => {
     const angle = wisp.phase + t * wisp.speed * 0.2;
     const px = W * wisp.x + Math.cos(angle) * 30;
     const py = H * wisp.y + Math.sin(angle) * 20;
     ctx.save();
-    ctx.globalAlpha = 0.4 + 0.4 * Math.sin(t * wisp.speed + wisp.phase);
+    ctx.globalAlpha = 0.3 + 0.4 * Math.sin(t * wisp.speed + wisp.phase);
+    // Wisp trail
+    const trail = ctx.createRadialGradient(px, py, 0, px, py, 12);
+    trail.addColorStop(0, 'rgba(77,175,255,0.6)');
+    trail.addColorStop(1, 'transparent');
+    ctx.fillStyle = trail;
     ctx.beginPath();
-    ctx.arc(px, py, 3, 0, Math.PI * 2);
+    ctx.arc(px, py, 12, 0, Math.PI * 2);
+    ctx.fill();
+    // Core
+    ctx.beginPath();
+    ctx.arc(px, py, 2.5, 0, Math.PI * 2);
     ctx.fillStyle = '#4DAFFF';
     ctx.shadowColor = '#4DAFFF';
     ctx.shadowBlur = 12;
@@ -615,49 +732,125 @@ function drawForestPath(ctx: CanvasRenderingContext2D, W: number, H: number, t: 
     ctx.restore();
   });
 
-  // Non-repeating organic trees (Left)
+  // ━━━ FOREGROUND TREES (close layer — organic shapes) ━━━
+  // Left trees
   TREES_LEFT.forEach((tree, i) => {
     const x = tree.x * W;
     const treeH = H * tree.h;
-    const sway = Math.sin(t * tree.swaySpeed + i) * 4;
+    const sway = Math.sin(t * tree.swaySpeed + i) * 5;
+    const canopyY = H - treeH;
     ctx.save();
-    ctx.globalAlpha = 0.92;
-    ctx.fillStyle = '#020814';
+    ctx.globalAlpha = 0.95;
+    // Trunk
+    ctx.fillStyle = '#030810';
     ctx.beginPath();
-    ctx.moveTo(x + sway, H - treeH);
-    ctx.lineTo(x - 25, H);
-    ctx.lineTo(x + 25, H);
+    ctx.moveTo(x - 8, H);
+    ctx.lineTo(x + 8, H);
+    ctx.lineTo(x + 4 + sway, canopyY + 30);
+    ctx.lineTo(x - 4 + sway, canopyY + 30);
     ctx.closePath();
     ctx.fill();
+    // Canopy (overlapping circles for organic feel)
+    ctx.fillStyle = '#020610';
+    ctx.beginPath(); ctx.arc(x + sway, canopyY + 20, 28 + (i % 3) * 6, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + sway - 15, canopyY + 30, 22 + (i % 2) * 5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + sway + 12, canopyY + 25, 20 + (i % 4) * 4, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   });
 
-  // Non-repeating organic trees (Right)
+  // Right trees
   TREES_RIGHT.forEach((tree, i) => {
     const x = tree.x * W;
     const treeH = H * tree.h;
-    const sway = Math.sin(t * tree.swaySpeed + i + 5) * 4;
+    const sway = Math.sin(t * tree.swaySpeed + i + 5) * 5;
+    const canopyY = H - treeH;
     ctx.save();
-    ctx.globalAlpha = 0.92;
-    ctx.fillStyle = '#020814';
+    ctx.globalAlpha = 0.95;
+    // Trunk
+    ctx.fillStyle = '#030810';
     ctx.beginPath();
-    ctx.moveTo(x + sway, H - treeH);
-    ctx.lineTo(x - 25, H);
-    ctx.lineTo(x + 25, H);
+    ctx.moveTo(x - 8, H);
+    ctx.lineTo(x + 8, H);
+    ctx.lineTo(x + 4 + sway, canopyY + 30);
+    ctx.lineTo(x - 4 + sway, canopyY + 30);
     ctx.closePath();
     ctx.fill();
+    // Canopy
+    ctx.fillStyle = '#020610';
+    ctx.beginPath(); ctx.arc(x + sway, canopyY + 20, 28 + (i % 3) * 6, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + sway - 12, canopyY + 28, 20 + (i % 2) * 5, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x + sway + 14, canopyY + 24, 22 + (i % 4) * 4, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   });
 
-  const fog = ctx.createLinearGradient(0, H * 0.55, 0, H * 0.7);
-  fog.addColorStop(0, 'transparent');
-  fog.addColorStop(0.5, 'rgba(11,20,55,0.25)');
-  fog.addColorStop(1, 'transparent');
+  // ━━━ GRASS TUFTS along path edges ━━━
+  ctx.save();
+  ctx.globalAlpha = 0.6;
+  for (let i = 0; i < 20; i++) {
+    const gx = W * (0.2 + (i / 20) * 0.6);
+    const gy = H * (0.65 + (i % 5) * 0.07);
+    const grassSway = Math.sin(t * 1.5 + i * 0.8) * 3;
+    ctx.strokeStyle = i % 3 === 0 ? '#1a3a2a' : '#0f2a1a';
+    ctx.lineWidth = 1.5;
+    for (let j = 0; j < 3; j++) {
+      ctx.beginPath();
+      ctx.moveTo(gx + j * 3, gy);
+      ctx.quadraticCurveTo(gx + j * 3 + grassSway, gy - 12, gx + j * 3 + grassSway * 1.5, gy - 18 - j * 3);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  // ━━━ FALLING LEAVES ━━━
+  ctx.save();
+  for (let i = 0; i < 8; i++) {
+    const leafT = (t * 0.3 + i * 1.7) % 4;
+    const leafX = W * (0.1 + (i / 8) * 0.8) + Math.sin(t * 0.8 + i * 2) * 40;
+    const leafY = H * (leafT / 4);
+    const leafRot = t * (1 + i * 0.3) + i;
+    ctx.save();
+    ctx.globalAlpha = 0.3 + 0.2 * Math.sin(t + i);
+    ctx.translate(leafX, leafY);
+    ctx.rotate(leafRot);
+    ctx.fillStyle = i % 3 === 0 ? '#2a3a1a' : i % 3 === 1 ? '#3a2a1a' : '#1a2a2a';
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 5, 2.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // ━━━ VOLUMETRIC FOG (multi-layer) ━━━
+  // Low fog
+  const fog1 = ctx.createLinearGradient(0, H * 0.6, 0, H * 0.75);
+  fog1.addColorStop(0, 'transparent');
+  fog1.addColorStop(0.5, 'rgba(11,20,55,0.2)');
+  fog1.addColorStop(1, 'transparent');
   ctx.save();
   ctx.globalAlpha = 0.5 + 0.2 * Math.sin(t * 0.3);
-  ctx.fillStyle = fog;
-  ctx.fillRect(0, H * 0.55, W, H * 0.18);
+  ctx.fillStyle = fog1;
+  ctx.fillRect(0, H * 0.6, W, H * 0.18);
   ctx.restore();
+
+  // Mid fog (drifting)
+  ctx.save();
+  ctx.globalAlpha = 0.15 + 0.1 * Math.sin(t * 0.2 + 1);
+  const fog2 = ctx.createRadialGradient(
+    W * 0.4 + Math.sin(t * 0.1) * 50, H * 0.55, 0,
+    W * 0.4 + Math.sin(t * 0.1) * 50, H * 0.55, W * 0.3
+  );
+  fog2.addColorStop(0, 'rgba(100,120,180,0.15)');
+  fog2.addColorStop(1, 'transparent');
+  ctx.fillStyle = fog2;
+  ctx.fillRect(0, H * 0.4, W, H * 0.3);
+  ctx.restore();
+
+  // Top canopy vignette
+  const canopyVignette = ctx.createLinearGradient(0, 0, 0, H * 0.3);
+  canopyVignette.addColorStop(0, 'rgba(2,6,10,0.7)');
+  canopyVignette.addColorStop(1, 'transparent');
+  ctx.fillStyle = canopyVignette;
+  ctx.fillRect(0, 0, W, H * 0.3);
 }
 
 function drawAncientGate(ctx: CanvasRenderingContext2D, centerX: number, H: number, t: number) {
